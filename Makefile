@@ -1,8 +1,6 @@
 CC=g++
 
-CXXFLAGS += -std=c++17 -pedantic -Wall -Wextra -g -O0 -fprofile-instr-generate -fcoverage-mapping
-
-
+CXXFLAGS += -std=c++17 -pedantic -Wall -Wextra -g -O0 
 
 PROGRAM = main
 all: $(PROGRAM)

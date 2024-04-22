@@ -18,6 +18,14 @@ void print(const T &value, const Args &...args) {
 constexpr int MAX_STREAMS = 8;
 constexpr int BUFF_LEN = 128;
 
+#if defined(__linux__)
+#include <endian.h>
+uint64_t ntohll(uint64_t n) {
+  return be64toh(n);
+}
+#endif
+
+
 void analyse(std::string file_name) {
   print("running analysis on file", file_name);
   FILE *file = fopen(file_name.c_str(), "rb");
