@@ -1,9 +1,18 @@
 CC=g++
 
-CFLAGS=-std=c++17 -pedantic -Wall -Wextra
+CXXFLAGS += -std=c++17 -pedantic -Wall -Wextra -g -O0 -fprofile-instr-generate -fcoverage-mapping
 
-main: main.cpp
-	$(CC) $(CFLAGS) main.cpp -o main
 
-run: main
-	./main
+
+PROGRAM = main
+all: $(PROGRAM)
+
+run: $(PROGRAM)
+	./$(PROGRAM) OUCHLMM2.incoming.packets
+
+$(PROGRAM): $(PROGRAM).cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^ 
+
+clean:
+	rm -f $(PROGRAM) $(PROFILE_OUT) callgrind.out
+
