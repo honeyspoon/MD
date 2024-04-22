@@ -30,6 +30,7 @@ typedef struct __attribute__((packed)) {
 } outch_header_t;
 static_assert(sizeof(outch_header_t) == 12, "packet type struct size mismatch");
 
+constexpr uint32_t MAX_MSG_LENGTH = 80;
 typedef struct __attribute__((packed)) {
   outch_header_t header;
   char order_token[14];
@@ -41,3 +42,4 @@ typedef struct __attribute__((packed)) {
 
 static_assert(sizeof(executed_message_t) == 43,
               "Executed Message struct size mismatch");
+static_assert(sizeof(executed_message_t) <= MAX_MSG_LENGTH);
