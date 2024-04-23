@@ -39,10 +39,14 @@ args_t parse_args(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
   args_t args = parse_args(argc, argv);
-  if (analyse(args.file_name))
+
+  if (outch::parser::analyse(args.file_name))
   {
     print("ERROR: analysis failed");
+    return 1;
   }
+
+  stats::aggregate_stats();
 
   print("end");
 }
