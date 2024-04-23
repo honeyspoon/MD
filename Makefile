@@ -1,22 +1,45 @@
 CC=g++
-CXXFLAGS += -std=c++17 -pedantic -Wall -Wextra -g -O0 
+CXXFLAGS += -std=c++20 -pedantic -Wall -Wextra -g -O0 
 
-PROGRAM = main
-SOURCES = main.cpp stats.cpp parser.cpp
-OBJECTS = $(SOURCES:.cpp=.o)
+# Directories
+SRCDIR := src
+BUILDDIR := build
+TARGETDIR := bin
 
-all: $(PROGRAM)
+# Targets
+EXECUTABLE := main
+TARGET := $(TARGETDIR)/$(EXECUTABLE)
 
-run: $(PROGRAM)
-	./$(PROGRAM) OUCHLMM2.incoming.packets
+# Code lists
+SOURCES := $(wildcard $(SRCDIR)/*.cpp)
+OBJECTS := $(patsubst $(SRCDIR)/%.cpp,$(BUILDDIR)/%.o,$(SOURCES))
 
-$(PROGRAM): $(OBJECTS)
-	$(CC) $(CXXFLAGS) -o $@ $^ 
+# Default make
+all: $(TARGET)
 
-%.o: %.cpp
+# Link the target executable
+$(TARGET): $(OBJECTS)
+	$(CC) $(CXXFLAGS) -o $@ $^
+
+# Compile the source files into object files
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp | $(BUILDDIR)
 	$(CC) $(CXXFLAGS) -c $< -o $@
 
-clean:
-	rm -f $(PROGRAM) $(OBJECTS)
+# Link the target executable
+$(TARGET): $(OBJECTS) | $(TARGETDIR)
+	$(CC) $(CXXFLAGS) -o $@ $^
 
-.PHONY: all run clean
+# Ensure the build and target directories exist
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
+
+$(TARGETDIR):
+	mkdir -p $(TARGETDIR)
+
+# ... [rest of your Makefile] ...
+
+# Phony targets
+.PHONY: all clean run
+
+run: $(TARGET)
+	./$(TARGET) OUCHLMM2.incoming.packets
