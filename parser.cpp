@@ -1,21 +1,12 @@
-#include "outch.h"
+#include "log.h"
 
-#include "log.cpp"
-#include "stats.cpp"
-#include <stdio.h>
-#include <iostream>
+#include "parser.h"
+#include "stats.h"
 
 namespace outch
 {
     namespace parser
     {
-        constexpr int BUFF_LEN = 128;
-        typedef struct
-        {
-            uint8_t id;
-            uint16_t offset;
-            uint8_t buffer[BUFF_LEN];
-        } stream_buffer_t;
 
         bool is_complete(stream_buffer_t &stream)
         {

@@ -1,12 +1,11 @@
-#pragma once
 #include <iostream>
-#include "log.cpp"
+
+#include "log.h"
+
+#include "stats.h"
 
 namespace stats
 {
-
-    // AoS instead of SoA for cache
-    // and array instead of hash
     int system_events[MAX_STREAMS] = {0};
     int accepted[MAX_STREAMS] = {0};
     int replaced[MAX_STREAMS] = {0};

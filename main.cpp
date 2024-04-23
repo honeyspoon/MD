@@ -1,12 +1,9 @@
-#include "outch.h"
 
-#include <stdio.h>
 #include <iostream>
+#include "log.h"
 
-#include "log.cpp"
-
-#include "stats.cpp"
-#include "parser.cpp"
+#include "stats.h"
+#include "parser.h"
 
 #if defined(__linux__)
 #include <endian.h>
