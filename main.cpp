@@ -21,7 +21,6 @@ constexpr int BUFF_LEN = 128;
 
 #if defined(__linux__)
 #include <endian.h>
-#include "main.h"
 uint64_t ntohll(uint64_t n)
 {
   return be64toh(n);
