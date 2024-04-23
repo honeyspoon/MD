@@ -12,5 +12,6 @@ $(PROGRAM): $(PROGRAM).cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^ 
 
 clean:
-	rm -f $(PROGRAM) $(PROFILE_OUT) callgrind.out
+	rm -f $(PROGRAM)
 
+.PHONY: clean
