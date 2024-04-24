@@ -1,7 +1,6 @@
 #include "log.h"
 
 #include "parser.h"
-#include "stats.h"
 
 namespace outch
 {
@@ -28,14 +27,6 @@ namespace outch
             return true;
         }
 
-        void on_executed_msg(stream_buffer_t &stream)
-        {
-            auto *executed_msg = reinterpret_cast<executed_message_t *>(stream.buffer);
-            executed_msg->executed_shares = ntohl(executed_msg->executed_shares);
-            // TODO: convert other fields
-            stats::executed_shares[stream.id] += executed_msg->executed_shares;
-        }
-
         int read_packet_header(FILE *file, packet_header_t &header)
         {
             fread(&header, sizeof(packet_header_t), 1, file);
@@ -52,7 +43,7 @@ namespace outch
 
             if (feof(file))
             {
-                print("Unexpected end of file!");
+                print("End of file!");
                 return 2;
             }
 
@@ -74,51 +65,16 @@ namespace outch
 
             if (feof(file))
             {
-                print("Unexpected end of file!");
+                print("end of file!");
                 return 1;
             }
 
-            return 0;
-        }
-
-        int parse_msg(stream_buffer_t &stream)
-        {
-            auto *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
-            uint8_t stream_id = stream.id;
-            switch (msg_header->message_type)
-            {
-            case SYSTEM_EVENT:
-                stats::system_events[stream_id]++;
-                // TODO: handle
-                break;
-            case ACCEPTED:
-                stats::accepted[stream_id]++;
-                // TODO: handle
-                break;
-            case REPLACED:
-                stats::replaced[stream_id]++;
-                // TODO: handle
-                break;
-            case EXECUTED:
-            {
-                stats::executed[stream_id]++;
-                on_executed_msg(stream);
-                break;
-            }
-            case CANCELED:
-                stats::cancelled[stream_id]++;
-                // TODO: handle
-                break;
-            default:
-                print("ERROR: unkown message type!", char(msg_header->message_type));
-                return 1;
-            }
             return 0;
         }
 
         stream_buffer_t stream_buffers[MAX_STREAMS];
 
-        int analyse(const std::string file_name)
+        int analyse(const std::string file_name, MessageHandler handler)
         {
             for (int i = 0; i < MAX_STREAMS; i++)
             {
@@ -148,11 +104,9 @@ namespace outch
                 if (!is_complete(stream))
                     continue;
 
-                if (parse_msg(stream))
-                {
-                    print("ERROR: parsing message");
-                    return 2;
-                }
+                auto *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
+                uint8_t stream_id = stream.id;
+                handler(stream);
             }
             fclose(file);
             return 0;
