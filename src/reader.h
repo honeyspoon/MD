@@ -98,7 +98,6 @@ public:
   bool eof() { return m_eof; }
 
   bool error() { return false; }
-  size_t gcount() {}
 
   void print_error() {}
 

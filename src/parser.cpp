@@ -73,7 +73,7 @@ bool read_msg(Reader<T> &reader, stream_buffer_t &stream,
   return true;
 }
 
-template <typename T> int parse(Reader<T> &reader, MessageHandler handler) {
+template <typename T> int parse(Reader<T> &reader, MessageHandler) {
   print("a");
   stream_buffer_t stream_buffers[MAX_STREAMS];
   for (int i = 0; i < MAX_STREAMS; i++) {
