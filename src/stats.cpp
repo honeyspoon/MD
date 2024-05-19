@@ -24,7 +24,6 @@ void print_stats(const stats_t &stats) {
         stats.executed_shares);
 }
 
-// not sure what the alternative to keeping them global is
 void aggregate_stats() {
   stats_t stats[MAX_STREAMS] = {};
   for (int i = 0; i < MAX_STREAMS; i++) {
@@ -56,60 +55,47 @@ void aggregate_stats() {
   print_stats(total_stats);
 }
 
-using ouch::parser::stream_buffer_t;
-void handleSystemEvent(stream_buffer_t &stream) {
-  system_events[stream.id]++;
-  // Handle SYSTEM_EVENT
-}
+using parser::stream_buffer_t;
 
-void handleAccepted(stream_buffer_t &stream) {
-  accepted[stream.id]++;
-  // Handle ACCEPTED
-}
+void handleSystemEvent(stream_buffer_t &stream) { system_events[stream.id]++; }
 
-void handleReplaced(stream_buffer_t &stream) {
-  replaced[stream.id]++;
-  // Handle REPLACED
-}
+void handleAccepted(stream_buffer_t &stream) { accepted[stream.id]++; }
 
-void handleCanceled(stream_buffer_t &stream) {
-  cancelled[stream.id]++;
-  // Handle REPLACED
-}
+void handleReplaced(stream_buffer_t &stream) { replaced[stream.id]++; }
+
+void handleCanceled(stream_buffer_t &stream) { cancelled[stream.id]++; }
 
 void handleExecuted(stream_buffer_t &stream) {
-  using namespace ouch;
   executed[stream.id]++;
-  // Handle REPLACED
   auto *executed_msg = reinterpret_cast<executed_message_t *>(stream.buffer);
   executed_msg->executed_shares = ntohl(executed_msg->executed_shares);
   executed_shares[stream.id] += executed_msg->executed_shares;
 }
 
-void handler(stream_buffer_t &) {
-  // using namespace ouch;
-  // auto *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
-  // message_type_t msg_type =
-  // static_cast<message_type_t>(msg_header->message_type); switch (msg_type)
-  // {
-  // case SYSTEM_EVENT:
-  //     handleSystemEvent(stream);
-  //     break;
-  // case ACCEPTED:
-  //     handleAccepted(stream);
-  //     break;
-  // case EXECUTED:
-  //     handleExecuted(stream);
-  //     break;
-  // case REPLACED:
-  //     handleReplaced(stream);
-  //     break;
-  // case CANCELED:
-  //     handleCanceled(stream);
-  //     break;
-  // default:
-  //     print("Unknown message type: ", msg_type);
-  // }
+void handler(stream_buffer_t &stream) {
+  using namespace ouch;
+  auto *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
+  message_type_t msg_type =
+      static_cast<message_type_t>(msg_header->message_type);
+  switch (msg_type) {
+  case SYSTEM_EVENT:
+    handleSystemEvent(stream);
+    break;
+  case ACCEPTED:
+    handleAccepted(stream);
+    break;
+  case EXECUTED:
+    handleExecuted(stream);
+    break;
+  case REPLACED:
+    handleReplaced(stream);
+    break;
+  case CANCELED:
+    handleCanceled(stream);
+    break;
+  default:
+    print("Unknown message type: ", msg_type);
+  }
 }
 } // namespace stats
 } // namespace ouch
