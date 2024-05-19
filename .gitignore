@@ -1,4 +1,4 @@
-main
-*.o
 .DS_Store
-bin/test_main
+bin/*
+build/*
+out/*
