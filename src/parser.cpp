@@ -2,7 +2,7 @@
 
 #include "parser.h"
 
-namespace outch
+namespace ouch
 {
     namespace parser
     {
@@ -27,75 +27,77 @@ namespace outch
             return true;
         }
 
-        int read_packet_header(FILE *file, packet_header_t &header)
+        template <typename T>
+        bool read_packet_header(Reader<T> &reader, packet_header_t *header)
         {
-            fread(&header, sizeof(packet_header_t), 1, file);
+            reader.read(reinterpret_cast<char *>(header), sizeof(packet_header_t));
 
             // big to little endian conversion
-            header.stream_id = ntohs(header.stream_id);
-            header.packet_length = ntohl(header.packet_length);
+            header->stream_id = ntohs(header->stream_id);
+            header->packet_length = ntohl(header->packet_length);
+            // print("packet", header->stream_id, header->packet_length);
 
-            if (ferror(file))
+            if (reader.eof())
             {
-                print("File read error!");
-                return 1;
+                print("packet", "end of file");
+                return false;
             }
 
-            if (feof(file))
+            if (reader.error())
             {
-                print("End of file!");
-                return 2;
+                print("fail");
+                reader.print_error();
+                return false;
             }
 
-            return 0;
+            return true;
         }
 
-        int read_msg(FILE *file, stream_buffer_t &stream, const uint32_t packet_length)
+        template <typename T>
+        bool read_msg(Reader<T> &reader, stream_buffer_t &stream, const uint32_t packet_length)
         {
-            if (fread(stream.buffer + stream.offset, packet_length, 1, file))
+            if (packet_length > sizeof(stream.buffer) - stream.offset)
             {
-                stream.offset += packet_length;
+                print("Packet length exceeds buffer capacity!");
+                return 1;
             }
 
-            if (ferror(file))
+            reader.read(reinterpret_cast<char *>(stream.buffer + stream.offset), packet_length);
+
+            if (reader.error())
             {
+                reader.print_error();
                 print("File read error!");
-                return 1;
+                return false;
             }
 
-            if (feof(file))
+            if (reader.eof() && reader.gcount() < packet_length)
             {
-                print("end of file!");
-                return 1;
+                print("End of file reached before completing packet read!");
+                return false;
             }
 
-            return 0;
+            stream.offset += packet_length;
+            return true;
         }
 
-        stream_buffer_t stream_buffers[MAX_STREAMS];
-
-        int analyse(const std::string file_name, MessageHandler handler)
+        template <typename T>
+        int parse(Reader<T> &reader, MessageHandler handler)
         {
+            stream_buffer_t stream_buffers[MAX_STREAMS];
             for (int i = 0; i < MAX_STREAMS; i++)
             {
                 stream_buffers[i].offset = 0;
                 stream_buffers[i].id = i;
             }
 
-            print("running analysis on file", file_name);
-
-            FILE *file = fopen(file_name.c_str(), "rb");
-            if (!file)
-            {
-                print("ERROR: opening file");
-            }
-
             packet_header_t header;
-            while (read_packet_header(file, header) == 0)
+
+            while (read_packet_header(reader, &header))
             {
                 stream_buffer_t &stream = stream_buffers[header.stream_id];
 
-                if (read_msg(file, stream, header.packet_length))
+                if (!read_msg(reader, stream, header.packet_length))
                 {
                     print("ERROR: reading message");
                     return 1;
@@ -105,11 +107,15 @@ namespace outch
                     continue;
 
                 auto *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
-                uint8_t stream_id = stream.id;
                 handler(stream);
             }
-            fclose(file);
+
+            print("End of file reached.");
             return 0;
         }
+
+        template int parse(Reader<FileReader> &reader, MessageHandler handler);
+        template int parse(Reader<CFileReader> &reader, MessageHandler handler);
+        template int parse(Reader<CMappedFileReader> &reader, MessageHandler handler);
     }
-}
+};

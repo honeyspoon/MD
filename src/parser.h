@@ -3,9 +3,10 @@
 #include <iosfwd>
 #include <functional>
 #include <map>
-#include "outch.h"
 
-namespace outch
+#include "ouch.h"
+#include "reader.h"
+namespace ouch
 {
     namespace parser
     {
@@ -19,13 +20,7 @@ namespace outch
         } stream_buffer_t;
 
         using MessageHandler = void (*)(stream_buffer_t &);
-
-        bool is_complete(stream_buffer_t &);
-
-        void on_executed_msg(stream_buffer_t &);
-        int read_packet_header(FILE *, packet_header_t &);
-        int read_msg(FILE *, stream_buffer_t &, const uint32_t);
-        int parse_msg(stream_buffer_t &);
-        int analyse(const std::string, MessageHandler);
+        template <typename T>
+        int parse(Reader<T> &reader, MessageHandler handler);
     }
 }

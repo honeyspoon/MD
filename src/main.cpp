@@ -1,7 +1,10 @@
 
 #include <iostream>
+#include <fstream>
+
 #include "log.h"
 
+#include "reader.h"
 #include "parser.h"
 
 #if defined(__linux__)
@@ -12,6 +15,7 @@ uint64_t ntohll(uint64_t n)
   return be64toh(n);
 }
 #endif
+
 struct args_t
 {
   std::string file_name;
@@ -107,7 +111,7 @@ void aggregate_stats()
   }
   print_stats(total_stats);
 }
-using outch::parser::stream_buffer_t;
+using ouch::parser::stream_buffer_t;
 void handleSystemEvent(stream_buffer_t &stream)
 {
   system_events[stream.id]++;
@@ -134,7 +138,7 @@ void handleCanceled(stream_buffer_t &stream)
 
 void handleExecuted(stream_buffer_t &stream)
 {
-  using namespace outch;
+  using namespace ouch;
   executed[stream.id]++;
   // Handle REPLACED
   auto *executed_msg = reinterpret_cast<executed_message_t *>(stream.buffer);
@@ -142,9 +146,15 @@ void handleExecuted(stream_buffer_t &stream)
   executed_shares[stream.id] += executed_msg->executed_shares;
 }
 
+std::fstream s("test.out", std::ios::out | std::ios::binary);
+
+class Handler
+{
+};
+
 void handler(stream_buffer_t &stream)
 {
-  using namespace outch;
+  using namespace ouch;
   auto *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
   message_type_t msg_type = static_cast<message_type_t>(msg_header->message_type);
   switch (msg_type)
@@ -167,15 +177,20 @@ void handler(stream_buffer_t &stream)
   default:
     print("Unknown message type: ", msg_type);
   }
+  s.write(reinterpret_cast<char *>(stream.buffer), msg_header->message_length + 2);
 }
 
 int main(int argc, char *argv[])
 {
   args_t args = parse_args(argc, argv);
 
-  using namespace outch;
+  using namespace ouch;
+
   reset_stats();
-  if (parser::analyse(args.file_name, handler))
+
+  auto reader = create_reader<CMappedFileReader>(args.file_name);
+  // auto reader = create_reader<FileReader>(args.file_name);
+  if (parser::parse(*reader, handler))
   {
     print("ERROR: analysis failed");
     return 1;
