@@ -1,12 +1,10 @@
-# check if dir exists
-if [ ! -d "./out" ]; then
-	mkdir -p out
-	pushd ./out
-	cmake ..
+if [ -d "out" ]; then
+	echo "reusing existing build directory"
 else
-	echo "reusing build dir"
+	mkdir -p out
+	pushd out
+	cmake ..
 fi
 
-pushd ./out
+pushd out
 cmake --build .
-popd

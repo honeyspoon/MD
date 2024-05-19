@@ -1,7 +1,6 @@
 
 #include <iostream>
-
-#include "log.h"
+#include <print>
 
 #include "parser.h"
 #include "reader.h"
@@ -35,12 +34,12 @@ int main(int argc, char *argv[]) {
   // auto reader = create_reader<CFileReader>(args.file_name);
 
   if (parser::parse(*reader, handler)) {
-    print("ERROR: analysis failed");
+    std::println("ERROR: analysis failed");
     return 1;
   }
 
-  stats::aggregate_stats();
+  // stats::aggregate_stats();
 
-  print("end");
+  std::println("end");
   return 0;
 }

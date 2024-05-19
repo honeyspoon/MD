@@ -1,4 +1,4 @@
-#include "log.h"
+#include <print>
 
 #include "ouch.h"
 #include "parser.h"
@@ -25,21 +25,22 @@ bool is_complete(stream_buffer_t &stream) {
 
 template <typename T>
 bool read_packet_header(Reader<T> &reader, packet_header_t *header) {
-  print("read_packet_header");
+  std::println("read_packet_header");
   reader.read(reinterpret_cast<char *>(header), sizeof(packet_header_t));
 
   // big to little endian conversion
   header->stream_id = ntohs(header->stream_id);
   header->packet_length = ntohl(header->packet_length);
-  print("packet", header->stream_id, header->packet_length);
+  std::println("packet {}  | lenght {}", header->stream_id,
+               header->packet_length);
 
+  std::println("eof peteti {}", reader.eof());
   if (reader.eof()) {
-    print("packet", "end of file");
     return false;
   }
 
   if (reader.error()) {
-    print("fail");
+    std::println("fail");
     reader.print_error();
     return false;
   }
@@ -51,7 +52,7 @@ template <typename T>
 bool read_msg(Reader<T> &reader, stream_buffer_t &stream,
               const uint32_t packet_length) {
   if (packet_length > sizeof(stream.buffer) - stream.offset) {
-    print("Packet length exceeds buffer capacity!");
+    std::println("Packet length exceeds buffer capacity!");
     return 1;
   }
 
@@ -60,12 +61,12 @@ bool read_msg(Reader<T> &reader, stream_buffer_t &stream,
 
   if (reader.error()) {
     reader.print_error();
-    print("File read error!");
+    std::println("File read error!");
     return false;
   }
 
   if (reader.eof()) {
-    print("End of file reached before completing packet read!");
+    std::println("End of file reached before completing packet read!");
     return false;
   }
 
@@ -74,7 +75,7 @@ bool read_msg(Reader<T> &reader, stream_buffer_t &stream,
 }
 
 template <typename T> int parse(Reader<T> &reader, MessageHandler) {
-  print("a");
+  std::println("a");
   stream_buffer_t stream_buffers[MAX_STREAMS];
   for (int i = 0; i < MAX_STREAMS; i++) {
     stream_buffers[i].offset = 0;
@@ -83,13 +84,13 @@ template <typename T> int parse(Reader<T> &reader, MessageHandler) {
 
   packet_header_t header;
 
-  print("b");
+  std::println("b");
   while (read_packet_header(reader, &header)) {
-    print("c");
+    std::println("c");
     stream_buffer_t &stream = stream_buffers[header.stream_id];
 
     if (!read_msg(reader, stream, header.packet_length)) {
-      print("ERROR: reading message");
+      std::println("ERROR: reading message");
       return 1;
     }
 
@@ -99,7 +100,7 @@ template <typename T> int parse(Reader<T> &reader, MessageHandler) {
     // handler(stream);
   }
 
-  print("End of file reached.");
+  std::println("End of file reached.");
   return 0;
 }
 

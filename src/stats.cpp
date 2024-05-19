@@ -1,7 +1,7 @@
+#include <print>
 
-#include "stats.h"
-#include "log.h"
 #include "ouch.h"
+#include "stats.h"
 
 namespace ouch {
 namespace stats {
@@ -14,14 +14,14 @@ int executed_shares[MAX_STREAMS] = {0};
 int cancelled[MAX_STREAMS] = {0};
 
 void print_stats(const stats_t &stats) {
-  print("");
-  print(stats.name);
-  print(" ", "Accepted", stats.accepted);
-  print(" ", "System Event", stats.system_events);
-  print(" ", "Replaced", stats.replaced);
-  print(" ", "Cancelled", stats.cancelled);
-  print(" ", "Executed", stats.executed, "messages | shares",
-        stats.executed_shares);
+  std::println("");
+  std::println("{}", stats.name);
+  std::println("Accepted {}", stats.accepted);
+  std::println("System Event {}", stats.system_events);
+  std::println("Replaced {}", stats.replaced);
+  std::println("Cancelled {}", stats.cancelled);
+  std::println("Executed messages {} | shares {}", stats.executed,
+               stats.executed_shares);
 }
 
 void aggregate_stats() {
@@ -94,7 +94,7 @@ void handler(stream_buffer_t &stream) {
     handleCanceled(stream);
     break;
   default:
-    print("Unknown message type: ", msg_type);
+    std::println("Unknown message type: {}", static_cast<char>(msg_type));
   }
 }
 } // namespace stats

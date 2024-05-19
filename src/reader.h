@@ -2,6 +2,7 @@
 #pragma once
 
 #include <fstream>
+#include <print>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -9,19 +10,21 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "log.h"
-
 template <typename T> class Reader {
 public:
   Reader *Derived() { return (static_cast<T *>(this)); }
 
   void read(char *buffer, size_t size) {
+    std::println("sssssss");
     (static_cast<T *>(this)->read(buffer, size));
   }
-  bool eof() { return (static_cast<T *>(this)->eof()); }
+  bool eof() {
+    std::println("eof papaa {}", (static_cast<T *>(this)->eof()));
+    return (static_cast<T *>(this)->eof());
+  }
   bool error() { return Derived()->error(); }
   void print_error() { static_cast<T *>(this)->print_error(); }
-  ~Reader() { print("reader dtor"); }
+  ~Reader() { std::println("reader dtor"); }
 };
 
 class FileReader : public Reader<FileReader> {
@@ -33,11 +36,14 @@ public:
   FileReader(const FileReader &) = delete;
 
   void read(char *buffer, size_t size) {
-    print("dd", size);
+    // std::println("dd", size);
     m_file->read(buffer, size);
   }
 
-  bool eof() { return m_file && m_file->eof(); }
+  bool eof() {
+    std::println("eof fils {}", m_file->eof());
+    return m_file && m_file->eof();
+  }
 
   bool error() { return m_file && m_file->fail(); }
   size_t gcount() { return m_file ? m_file->gcount() : 0; }
@@ -45,13 +51,13 @@ public:
     std::ios_base::iostate state = m_file->rdstate();
 
     if (state & std::ios_base::eofbit) {
-      print("End of file reached.");
+      std::println("End of file reached.");
     }
     if (state & std::ios_base::failbit) {
-      print("Non-fatal I/O error occurred.");
+      std::println("Non-fatal I/O error occurred.");
     }
     if (state & std::ios_base::badbit) {
-      print("Fatal I/O error occurred.");
+      std::println("Fatal I/O error occurred.");
     }
 
     std::perror("Error: ");
