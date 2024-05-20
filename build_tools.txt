@@ -1,0 +1,8 @@
+cmake version: cmake version 3.29.3
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+clang version: Homebrew clang version 18.1.5
+Target: arm64-apple-darwin23.4.0
+Thread model: posix
+InstalledDir: /opt/homebrew/opt/llvm/bin
+ninja version: 1.12.1
