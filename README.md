@@ -4,7 +4,6 @@ a playground to implement common market data programs
 
 ## requirements
 
-look inside `build_tools.txt`
 
 ## build
 
