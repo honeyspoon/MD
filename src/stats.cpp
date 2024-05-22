@@ -1,10 +1,22 @@
-#include <print>
+module;
 
 #include "ouch.h"
-#include "stats.h"
+
+import ouch.parser;
+export module ouch.stats;
 
 namespace ouch {
 namespace stats {
+
+struct stats_t {
+  int id;
+  int system_events = 0;
+  int accepted = 0;
+  int replaced = 0;
+  int executed = 0;
+  int executed_shares = 0;
+  int cancelled = 0;
+};
 
 int system_events[MAX_STREAMS] = {0};
 int accepted[MAX_STREAMS] = {0};
@@ -14,30 +26,25 @@ int executed_shares[MAX_STREAMS] = {0};
 int cancelled[MAX_STREAMS] = {0};
 
 void print_stats(const stats_t &stats) {
-  std::println("");
-  std::println("{}", stats.name);
-  std::println("Accepted {}", stats.accepted);
-  std::println("System Event {}", stats.system_events);
-  std::println("Replaced {}", stats.replaced);
-  std::println("Cancelled {}", stats.cancelled);
-  std::println("Executed messages {} | shares {}", stats.executed,
-               stats.executed_shares);
+  // std::println("");
+  // std::println("{}", stats.id);
+  // std::println("Accepted {}", stats.accepted);
+  // std::println("System Event {}", stats.system_events);
+  // std::println("Replaced {}", stats.replaced);
+  // std::println("Cancelled {}", stats.cancelled);
+  // std::println("Executed messages {} | shares {}", stats.executed,
+  //              stats.executed_shares);
 }
 
-void aggregate_stats() {
+export void aggregate_stats() {
   stats_t stats[MAX_STREAMS] = {};
   for (int i = 0; i < MAX_STREAMS; i++) {
-    stats[i] = {"Stream " + std::to_string(i),
-                system_events[i],
-                accepted[i],
-                replaced[i],
-                executed[i],
-                executed_shares[i],
-                cancelled[i]};
+    stats[i] = {i,           system_events[i],   accepted[i], replaced[i],
+                executed[i], executed_shares[i], cancelled[i]};
   }
 
   // aggregate total stats
-  stats_t total_stats = {"Total"};
+  stats_t total_stats = {-1};
   for (int i = 0; i < MAX_STREAMS; i++) {
     total_stats.system_events += system_events[i];
     total_stats.accepted += accepted[i];
@@ -72,7 +79,7 @@ void handleExecuted(stream_buffer_t &stream) {
   executed_shares[stream.id] += executed_msg->executed_shares;
 }
 
-void handler(stream_buffer_t &stream) {
+export void handler(stream_buffer_t &stream) {
   using namespace ouch;
   auto *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
   message_type_t msg_type =
@@ -94,8 +101,10 @@ void handler(stream_buffer_t &stream) {
     handleCanceled(stream);
     break;
   default:
-    std::println("Unknown message type: {}", static_cast<char>(msg_type));
+    break;
+    // std::println("Unknown message type: {}", static_cast<char>(msg_type));
   }
 }
+
 } // namespace stats
 } // namespace ouch

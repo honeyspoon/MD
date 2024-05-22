@@ -3,11 +3,10 @@
 include(build.cmake)
 
 if(BUILD_SUCCESS)
-  message("build success")
-  execute_process(COMMAND echo 4)
-  message(${BUILD_DIR}/main)
-  execute_process(COMMAND main OUCHLMM2.incoming.packets
-                  WORKING_DIRECTORY ${BUILD_DIR})
+  message("=============")
+  execute_process(COMMAND unbuffer main OUCHLMM2.incoming.packets COMMAND_ECHO
+                          STDOUT WORKING_DIRECTORY ${BUILD_DIR})
+  message("=============")
 else()
   message("build failed")
 endif()

@@ -1,33 +1,22 @@
+module;
 
-#pragma once
-
-#include <fstream>
-#include <print>
+export module reader;
+import std;
 
 #include <fcntl.h>
-#include <stdio.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-template <typename T> class Reader {
-public:
-  Reader *Derived() { return (static_cast<T *>(this)); }
-
-  void read(char *buffer, size_t size) {
-    std::println("sssssss");
-    (static_cast<T *>(this)->read(buffer, size));
-  }
-  bool eof() {
-    std::println("eof papaa {}", (static_cast<T *>(this)->eof()));
-    return (static_cast<T *>(this)->eof());
-  }
-  bool error() { return Derived()->error(); }
-  void print_error() { static_cast<T *>(this)->print_error(); }
-  ~Reader() { std::println("reader dtor"); }
+export template <typename T>
+concept Readable = requires(T t, char *buffer, size_t size) {
+  { t.read(buffer, size) } -> std::same_as<void>;
+  { t.eof() } -> std::same_as<bool>;
+  { t.error() } -> std::same_as<bool>;
+  { t.print_error() } -> std::same_as<void>;
 };
 
-class FileReader : public Reader<FileReader> {
+export class FileReader {
 public:
   FileReader(const std::string file_name)
       : m_file(std::make_unique<std::ifstream>(
@@ -41,7 +30,7 @@ public:
   }
 
   bool eof() {
-    std::println("eof fils {}", m_file->eof());
+    // std::println("eof fils {}", m_file->eof());
     return m_file && m_file->eof();
   }
 
@@ -51,13 +40,13 @@ public:
     std::ios_base::iostate state = m_file->rdstate();
 
     if (state & std::ios_base::eofbit) {
-      std::println("End of file reached.");
+      // std::println("End of file reached.");
     }
     if (state & std::ios_base::failbit) {
-      std::println("Non-fatal I/O error occurred.");
+      // std::println("Non-fatal I/O error occurred.");
     }
     if (state & std::ios_base::badbit) {
-      std::println("Fatal I/O error occurred.");
+      // std::println("Fatal I/O error occurred.");
     }
 
     std::perror("Error: ");
@@ -66,15 +55,15 @@ public:
 private:
   std::unique_ptr<std::ifstream> m_file;
 };
+static_assert(Readable<FileReader>);
 
-class CMappedFileReader : public Reader<CMappedFileReader> {
+export class CMappedFileReader {
 public:
   CMappedFileReader(const std::string file_name)
       : m_fd(open(file_name.c_str(), O_RDONLY)), m_offset(0), m_eof(false),
         m_file_size(0), m_file_data(nullptr) {
     struct stat st;
     if (fstat(m_fd, &st) == -1) {
-      perror("fstat");
       close(m_fd);
       return;
     }
@@ -83,7 +72,6 @@ public:
     m_file_data = static_cast<char *>(
         mmap(NULL, m_file_size, PROT_READ, MAP_PRIVATE, m_fd, 0));
     if (m_file_data == MAP_FAILED) {
-      perror("mmap");
       close(m_fd);
       m_file_data = nullptr;
       return;
@@ -116,30 +104,27 @@ private:
   size_t m_file_size;
   char *m_file_data;
 };
+static_assert(Readable<CMappedFileReader>);
 
-class CFileReader : public Reader<CFileReader> {
+export class CFileReader {
 public:
-  CFileReader(std::string file_name) { m_file = fopen(file_name.c_str(), "r"); }
+  CFileReader(std::string file_name) { m_file = std::fopen(file_name.c_str(), "r"); }
 
   CFileReader(const CFileReader &) = delete;
 
-  void read(char *buffer, size_t size) { fread(buffer, size, 1, m_file); }
+  void read(char *buffer, size_t size) { std::fread(buffer, size, 1, m_file); }
 
-  bool eof() { return feof(m_file); }
+  bool eof() { return std::feof(m_file); }
 
-  bool error() { return ferror(m_file); }
+  bool error() { return std::ferror(m_file); }
   size_t gcount() { return m_file ? m_gcount : 0; }
 
   void print_error() {}
 
-  ~CFileReader() { fclose(m_file); }
+  ~CFileReader() { std::fclose(m_file); }
 
 private:
-  FILE *m_file;
+  std::FILE *m_file;
   int m_gcount;
 };
-
-template <typename T>
-std::unique_ptr<Reader<T>> create_reader(std::string file_name) {
-  return std::make_unique<T>(file_name);
-}
+static_assert(Readable<CFileReader>);
