@@ -33,20 +33,19 @@ if(NOT EXISTS ${LIBCLC_SRC_DIR})
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
 
-set(LIBCXX_GENERATED_MODULE_DIR ${LIBCLC_SRC_DIR}/modules/)
-set(CMAKE_INSTALL_PREFIX ${LIBCLC_SRC_DIR}/modules/)
-set(LIBCXX_INSTALL_LIBRARY_DIR ${LIBCLC_SRC_DIR}/modules/)
-set(LIBCXX_INSTALL_MODULES_DIR ${LIBCLC_SRC_DIR}/modules/)
-set(LIBCXX_LIBRARY_DIR ${LIBCLC_SRC_DIR}/modules/f)
+set(LIBCXX_GENERATED_MODULE_DIR ${LIBCLC_SRC_DIR}/modules_i/)
+set(CMAKE_INSTALL_PREFIX ${LIBCLC_SRC_DIR}/modules_i/)
+set(LIBCXX_INSTALL_LIBRARY_DIR ${LIBCLC_SRC_DIR}/modules_i/)
+set(LIBCXX_INSTALL_MODULES_DIR ${LIBCLC_SRC_DIR}/modules_i/)
+set(LIBCXX_LIBRARY_DIR ${LIBCLC_SRC_DIR}/modules_i/)
 
-add_subdirectory(${LIBCLC_SRC_DIR}/modules/)
+set(STD_SOURCE_DIR ${LIBCXX_GENERATED_MODULE_DIR}/)
 
-set(STD_SOURCE_DIR "${LIBCXX_GENERATED_MODULE_DIR}")
 add_library(std)
-
+add_subdirectory(${LIBCLC_SRC_DIR}/modules/)
+target_include_directories(std PUBLIC ${LIBCLC_SRC_DIR}/modules/)
 set_target_properties(std PROPERTIES LINKER_LANGUAGE CXX)
 
-# Specify target sources
 target_sources(
   std
   PUBLIC FILE_SET
