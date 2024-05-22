@@ -80,24 +80,25 @@ void handleExecuted(stream_buffer_t &stream) {
 }
 
 void handler(stream_buffer_t &stream) {
-  using namespace ouch;
   auto *msg_header = reinterpret_cast<ouch::msg_header_t *>(stream.buffer);
+  using ouch::message_type_t;
   message_type_t msg_type =
       static_cast<message_type_t>(msg_header->message_type);
+
   switch (msg_type) {
-  case ouch::SYSTEM_EVENT:
+  case message_type_t::SYSTEM_EVENT:
     handleSystemEvent(stream);
     break;
-  case ouch::ACCEPTED:
+  case message_type_t::ACCEPTED:
     handleAccepted(stream);
     break;
-  case ouch::EXECUTED:
+  case message_type_t::EXECUTED:
     handleExecuted(stream);
     break;
-  case ouch::REPLACED:
+  case message_type_t::REPLACED:
     handleReplaced(stream);
     break;
-  case ouch::CANCELED:
+  case message_type_t::CANCELED:
     handleCanceled(stream);
     break;
   default:
@@ -126,19 +127,16 @@ args_t parse_args(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   args_t args = parse_args(argc, argv);
 
-  using namespace ouch;
-
   // FileReader reader{args.file_name};
   // CFileReader reader{args.file_name};
   CMappedFileReader reader{args.file_name};
 
-  if (parser::parse(reader, handler)) {
+  if (ouch::parser::parse(reader, handler)) {
     println("ERROR: analysis failed");
     return 1;
   }
 
   aggregate_stats();
 
-  println("end");
   return 0;
 }
