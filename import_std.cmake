@@ -33,10 +33,10 @@ if(NOT EXISTS ${LIBCLC_SRC_DIR})
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
 
-set(LIBCXX_GENERATED_MODULE_DIR ${LIBCLC_SRC_DIR}/modules/b)
-set(CMAKE_INSTALL_PREFIX ${LIBCLC_SRC_DIR}/modules/a)
-set(LIBCXX_INSTALL_LIBRARY_DIR ${LIBCLC_SRC_DIR}/modules/d)
-set(LIBCXX_INSTALL_MODULES_DIR ${LIBCLC_SRC_DIR}/modules/e)
+set(LIBCXX_GENERATED_MODULE_DIR ${LIBCLC_SRC_DIR}/modules/)
+set(CMAKE_INSTALL_PREFIX ${LIBCLC_SRC_DIR}/modules/)
+set(LIBCXX_INSTALL_LIBRARY_DIR ${LIBCLC_SRC_DIR}/modules/)
+set(LIBCXX_INSTALL_MODULES_DIR ${LIBCLC_SRC_DIR}/modules/)
 set(LIBCXX_LIBRARY_DIR ${LIBCLC_SRC_DIR}/modules/f)
 
 add_subdirectory(${LIBCLC_SRC_DIR}/modules/)
@@ -46,6 +46,7 @@ add_library(std)
 
 set_target_properties(std PROPERTIES LINKER_LANGUAGE CXX)
 
+# Specify target sources
 target_sources(
   std
   PUBLIC FILE_SET
@@ -58,4 +59,5 @@ target_sources(
          ${STD_SOURCE_DIR}/std.cppm
          ${STD_SOURCE_DIR}/std.compat.cppm)
 
+# Link the std library
 link_libraries(std)

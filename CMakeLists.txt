@@ -37,7 +37,6 @@ foreach(file ${targets})
   add_executable(${target} ${SOURCES})
   target_include_directories(${target}
                              INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/)
-
   target_sources(${target} PRIVATE ${file})
   target_sources(${target} PRIVATE FILE_SET CXX_MODULES FILES ${SOURCES})
   target_link_libraries(${target} std)
