@@ -1,0 +1,14 @@
+#!python
+#set filetype=python
+
+import argparse
+import utils
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("target", default="build", help="Target to build")
+
+    args = parser.parse_args()
+    utils.build(args.target)
+

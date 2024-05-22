@@ -1,12 +1,14 @@
 module;
 
-export module reader;
-import std;
-
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+export module reader;
+
+import std;
+import log;
 
 export template <typename T>
 concept Readable = requires(T t, char *buffer, size_t size) {
@@ -24,15 +26,9 @@ public:
 
   FileReader(const FileReader &) = delete;
 
-  void read(char *buffer, size_t size) {
-    // std::println("dd", size);
-    m_file->read(buffer, size);
-  }
+  void read(char *buffer, size_t size) { m_file->read(buffer, size); }
 
-  bool eof() {
-    // std::println("eof fils {}", m_file->eof());
-    return m_file && m_file->eof();
-  }
+  bool eof() { return m_file && m_file->eof(); }
 
   bool error() { return m_file && m_file->fail(); }
   size_t gcount() { return m_file ? m_file->gcount() : 0; }
@@ -40,13 +36,13 @@ public:
     std::ios_base::iostate state = m_file->rdstate();
 
     if (state & std::ios_base::eofbit) {
-      // std::println("End of file reached.");
+      println("End of file reached.");
     }
     if (state & std::ios_base::failbit) {
-      // std::println("Non-fatal I/O error occurred.");
+      println("Non-fatal I/O error occurred.");
     }
     if (state & std::ios_base::badbit) {
-      // std::println("Fatal I/O error occurred.");
+      println("Fatal I/O error occurred.");
     }
 
     std::perror("Error: ");
@@ -108,7 +104,9 @@ static_assert(Readable<CMappedFileReader>);
 
 export class CFileReader {
 public:
-  CFileReader(std::string file_name) { m_file = std::fopen(file_name.c_str(), "r"); }
+  CFileReader(std::string file_name) {
+    m_file = std::fopen(file_name.c_str(), "r");
+  }
 
   CFileReader(const CFileReader &) = delete;
 

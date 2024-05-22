@@ -1,0 +1,20 @@
+#!python
+#set filetype=python
+
+import argparse
+import utils
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("exe")
+    parser.add_argument("--watch",  action='store_true')
+    parser.add_argument("positional_args", nargs="*", help="Positional arguments after --")
+
+    args = parser.parse_args()
+
+    if args.watch:
+        utils.watch(args.exe, args.positional_args)
+    else:
+        utils.run(args.exe, args.positional_args)
+

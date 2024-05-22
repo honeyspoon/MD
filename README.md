@@ -1,6 +1,7 @@
 # MD
 
-a playground to implement common market data programs
+A playground to implement common market data programs
+This is a toy project that is not intended to be used in production
 
 ## requirements
 
@@ -8,12 +9,14 @@ Look inside `build_tools.txt`
 
 ## build
 
-`./build.cmake`
+`./build`
+`./build target`
 
 ## build & run
 
-`./run.cmake`
+`./run target -- target_args `
+`./run ouch_stats  --  OUCHLMM2.incoming.packets`
 
 ## watch build & run
 
-`./watch.cmake`
+`./run --watch ouch_stats  --  OUCHLMM2.incoming.packets`

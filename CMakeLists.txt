@@ -26,17 +26,22 @@ add_link_options(-flto)
 
 add_compile_options(-fdiagnostics-color=always)
 
-set(SOURCES src/parser.cpp src/stats.cpp src/reader.cpp)
-
-add_executable(main ${SOURCES})
+file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/modules/*.cpp")
+message(STATUS "SOURCES: ${SOURCES}")
 
 set_source_files_properties(${SOURCES} PROPERTIES CXX_MODULES true)
 
-target_sources(main PRIVATE src/main.cpp)
+file(GLOB targets "${CMAKE_CURRENT_SOURCE_DIR}/src/exe/*")
+foreach(file ${targets})
+  get_filename_component(target ${file} NAME_WE)
+  add_executable(${target} ${SOURCES})
+  target_include_directories(${target}
+                             INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 
-target_sources(main PRIVATE FILE_SET CXX_MODULES FILES ${SOURCES})
-
-target_link_libraries(main std)
+  target_sources(${target} PRIVATE ${file})
+  target_sources(${target} PRIVATE FILE_SET CXX_MODULES FILES ${SOURCES})
+  target_link_libraries(${target} std)
+endforeach()
 
 file(REMOVE build_tools.txt)
 file(

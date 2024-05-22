@@ -1,8 +1,10 @@
-#ifndef ouch_H
-#define ouch_H
-
+module;
 #include <cstdint>
 #include <stddef.h>
+
+export module ouch;
+
+export namespace ouch {
 
 constexpr int MAX_STREAMS = 8;
 
@@ -40,4 +42,4 @@ typedef struct __attribute__((packed)) {
   uint64_t match_number;
 } executed_message_t;
 
-#endif
+} // namespace ouch

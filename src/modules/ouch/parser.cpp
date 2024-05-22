@@ -1,12 +1,10 @@
 module;
-
-// #include <print>
-
-#include "ouch.h"
-
-import reader;
-
+#include <cstdint>
 export module ouch.parser;
+
+import ouch;
+import reader;
+import log;
 
 namespace ouch {
 namespace parser {
@@ -42,23 +40,18 @@ bool is_complete(stream_buffer_t &stream) {
 }
 
 bool read_packet_header(Readable auto &reader, packet_header_t *header) {
-  // std::println("read_packet_header");
   reader.read(reinterpret_cast<char *>(header), sizeof(packet_header_t));
 
   // big to little endian conversion
   header->stream_id = ntohs(header->stream_id);
   header->packet_length = ntohl(header->packet_length);
-  // std::println("packet {}  | lenght {}", header->stream_id,
-  //              header->packet_length);
 
-  // std::println("eof peteti {}", reader.eof());
   if (reader.eof()) {
     return false;
   }
 
   if (reader.error()) {
-    // std::println("fail");
-    // reader.print_error();
+    reader.print_error();
     return false;
   }
 
@@ -68,7 +61,7 @@ bool read_packet_header(Readable auto &reader, packet_header_t *header) {
 bool read_msg(Readable auto &reader, stream_buffer_t &stream,
               const uint32_t packet_length) {
   if (packet_length > sizeof(stream.buffer) - stream.offset) {
-    // std::println("Packet length exceeds buffer capacity!");
+    println("Packet length exceeds buffer capacity!");
     return 1;
   }
 
@@ -76,13 +69,13 @@ bool read_msg(Readable auto &reader, stream_buffer_t &stream,
               packet_length);
 
   if (reader.error()) {
-    // reader.print_error();
-    // std::println("File read error!");
+    reader.print_error();
+    println("File read error!");
     return false;
   }
 
   if (reader.eof()) {
-    // std::println("End of file reached before completing packet read!");
+    println("End of file reached before completing packet read!");
     return false;
   }
 
@@ -92,8 +85,7 @@ bool read_msg(Readable auto &reader, stream_buffer_t &stream,
 
 using MessageHandler = void (*)(stream_buffer_t &);
 
-export int parse(Readable auto &reader, MessageHandler) {
-  // export template <Readable T> int parse(Reader<T> &reader, MessageHandler) {
+export int parse(Readable auto &reader, MessageHandler handler) {
   stream_buffer_t stream_buffers[MAX_STREAMS];
   for (int i = 0; i < MAX_STREAMS; i++) {
     stream_buffers[i].offset = 0;
@@ -102,23 +94,21 @@ export int parse(Readable auto &reader, MessageHandler) {
 
   packet_header_t header;
 
-  // std::println("b");
   while (read_packet_header(reader, &header)) {
-    // std::println("c");
     stream_buffer_t &stream = stream_buffers[header.stream_id];
 
     if (!read_msg(reader, stream, header.packet_length)) {
-      // std::println("ERROR: reading message");
+      println("ERROR: reading message");
       return 1;
     }
 
     if (!is_complete(stream))
       continue;
 
-    // handler(stream);
+    handler(stream);
   }
 
-  // std::println("End of file reached.");
+  println("End of file reached.");
   return 0;
 }
 
