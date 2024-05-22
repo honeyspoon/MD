@@ -32,7 +32,7 @@ void print_stats(const stats_t &stats, const std::string name = "") {
   println("- System Event ", stats.system_events);
   println("- Replaced ", stats.replaced);
   println("- Cancelled ", stats.cancelled);
-  println("- Executed messages ", stats.executed, " | shares ", stats.executed,
+  println("- Executed messages ", stats.executed, " | shares ",
           stats.executed_shares);
 }
 
