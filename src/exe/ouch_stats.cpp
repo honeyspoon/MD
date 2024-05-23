@@ -10,6 +10,7 @@ import std;
 import reader;
 
 struct stats_t {
+  int id;
   int system_events = 0;
   int accepted = 0;
   int replaced = 0;
@@ -18,89 +19,49 @@ struct stats_t {
   int cancelled = 0;
 };
 
-int system_events[ouch::MAX_STREAMS];
-int accepted[ouch::MAX_STREAMS];
-int replaced[ouch::MAX_STREAMS];
-int executed[ouch::MAX_STREAMS];
-int executed_shares[ouch::MAX_STREAMS];
-int cancelled[ouch::MAX_STREAMS];
-
-void print_stats(const stats_t &stats, const std::string name = "") {
+void print_stats(const stats_t &stat) {
   println("");
-  println(name);
-  println("- Accepted ", stats.accepted);
-  println("- System Event ", stats.system_events);
-  println("- Replaced ", stats.replaced);
-  println("- Cancelled ", stats.cancelled);
-  println("- Executed messages ", stats.executed, " | shares ",
-          stats.executed_shares);
+  println(std::format("Stream {}", stat.id));
+  println("- Accepted ", stat.accepted);
+  println("- System Event ", stat.system_events);
+  println("- Replaced ", stat.replaced);
+  println("- Cancelled ", stat.cancelled);
+  println("- Executed messages ", stat.executed, " | shares ",
+          stat.executed_shares);
 }
 
-void aggregate_stats() {
-  stats_t stats[ouch::MAX_STREAMS] = {};
-  for (int i = 0; i < ouch::MAX_STREAMS; i++) {
-    stats[i] = {system_events[i], accepted[i],        replaced[i],
-                executed[i],      executed_shares[i], cancelled[i]};
-  }
-
-  stats_t total_stats = {-1};
-  for (int i = 0; i < ouch::MAX_STREAMS; i++) {
-    total_stats.system_events += system_events[i];
-    total_stats.accepted += accepted[i];
-    total_stats.replaced += replaced[i];
-    total_stats.executed += executed[i];
-    total_stats.executed_shares += executed_shares[i];
-    total_stats.cancelled += cancelled[i];
-  }
-
-  for (int i = 0; i < ouch::MAX_STREAMS; i++) {
-    if (stats[i].accepted)
-      print_stats(stats[i], std::format("Stream {}", i));
-  }
-  print_stats(total_stats, "Total");
-}
+stats_t stats[ouch::MAX_STREAMS];
 
 using namespace ouch::parser;
-void handleSystemEvent(stream_buffer_t &stream) { system_events[stream.id]++; }
-
-void handleAccepted(stream_buffer_t &stream) { accepted[stream.id]++; }
-
-void handleReplaced(stream_buffer_t &stream) { replaced[stream.id]++; }
-
-void handleCanceled(stream_buffer_t &stream) { cancelled[stream.id]++; }
-
-void handleExecuted(stream_buffer_t &stream) {
-  executed[stream.id]++;
-  auto *executed_msg =
-      reinterpret_cast<ouch::executed_message_t *>(stream.buffer);
-  executed_msg->executed_shares = ntohl(executed_msg->executed_shares);
-  executed_shares[stream.id] += executed_msg->executed_shares;
-}
-
-void handler(stream_buffer_t &stream) {
-  auto *msg_header = reinterpret_cast<ouch::msg_header_t *>(stream.buffer);
+void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
   using ouch::msg_type_t;
-  msg_type_t msg_type = static_cast<msg_type_t>(msg_header->msg_type);
+  stats_t &stream_stats = stats[stream_id];
+  stream_stats.id = stream_id;
 
-  switch (msg_type) {
+  switch (msg_header->msg_type) {
   case msg_type_t::SYSTEM_EVENT:
-    handleSystemEvent(stream);
+    stream_stats.system_events++;
     break;
   case msg_type_t::ACCEPTED:
-    handleAccepted(stream);
+    stream_stats.accepted++;
     break;
-  case msg_type_t::EXECUTED:
-    handleExecuted(stream);
+  case msg_type_t::EXECUTED: {
+    stream_stats.executed++;
+    auto *executed_msg =
+        reinterpret_cast<const ouch::executed_message_t *>(msg_header);
+    stream_stats.executed_shares += ntohl(executed_msg->executed_shares);
     break;
+  }
   case msg_type_t::REPLACED:
-    handleReplaced(stream);
+    stream_stats.replaced++;
     break;
   case msg_type_t::CANCELED:
-    handleCanceled(stream);
+    stream_stats.cancelled++;
     break;
   default:
+    println("Unknown message type: ",
+            static_cast<uint8_t>(msg_header->msg_type));
     break;
-    println("Unknown message type: ", static_cast<uint8_t>(msg_type));
   }
 }
 
@@ -132,7 +93,11 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  aggregate_stats();
+  for (auto &stat : stats) {
+    if (stat.accepted > 0) {
+      print_stats(stat);
+    }
+  }
 
   return 0;
 }

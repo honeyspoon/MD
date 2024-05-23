@@ -28,24 +28,25 @@ args_t parse_args(int argc, char *argv[]) {
 }
 
 std::map<uint8_t, std::unique_ptr<FileWriter>> writers;
-void handler(ouch::parser::stream_buffer_t &stream) {
-  auto it = writers.find(stream.id);
+void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
+  auto it = writers.find(stream_id);
   if (it == writers.end()) {
-    auto result = writers.emplace(
-        stream.id,
-        std::make_unique<FileWriter>(std::format("out_{}.bin", stream.id)));
+    std::string file_name = std::format("out_{}.bin", stream_id);
+    auto result =
+        writers.emplace(stream_id, std::make_unique<FileWriter>(file_name));
+    println("Created writer for stream id ", std::to_string(stream_id),
+            " in file ", file_name);
     it = result.first;
   }
 
-  auto *msg_header = reinterpret_cast<ouch::msg_header_t *>(stream.buffer);
   ouch::packet_header_t packet_header{
-      .stream_id = htons(stream.id),
+      .stream_id = htons(stream_id),
       .packet_length =
           htonl(sizeof(uint16_t) + ntohs(msg_header->message_length))};
 
   it->second->write(reinterpret_cast<const char *>(&packet_header),
                     sizeof(packet_header));
-  it->second->write(reinterpret_cast<const char *>(stream.buffer),
+  it->second->write(reinterpret_cast<const char *>(msg_header),
                     ntohs(msg_header->message_length) + sizeof(uint16_t));
 }
 

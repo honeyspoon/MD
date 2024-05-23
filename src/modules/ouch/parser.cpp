@@ -37,8 +37,8 @@ bool is_complete(stream_buffer_t &stream) {
 }
 
 template <typename T>
-concept Callable = requires(T t, stream_buffer_t &stream) {
-  { t(stream) } -> std::same_as<void>;
+concept Callable = requires(T t, uint8_t id, const msg_header_t *msg_header) {
+  { t(id, msg_header) } -> std::same_as<void>;
 };
 
 export int parse(Readable auto &reader, Callable auto &&handler) {
@@ -63,7 +63,10 @@ export int parse(Readable auto &reader, Callable auto &&handler) {
     if (!is_complete(stream))
       continue;
 
-    handler(stream);
+    const msg_header_t *msg_header =
+        reinterpret_cast<msg_header_t *>(stream.buffer);
+
+    handler(stream_id, msg_header);
   }
   println("End of file reached.");
 
