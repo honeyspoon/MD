@@ -1,6 +1,7 @@
 module;
 #include <cstdint>
 export module ouch.parser;
+import std;
 
 import ouch;
 import reader;
@@ -18,7 +19,7 @@ uint64_t ntohll(uint64_t n) { return be64toh(n); }
 constexpr int BUFF_LEN = 128;
 export typedef struct {
   uint8_t id;
-  uint16_t offset;
+  uint8_t offset;
   uint8_t buffer[BUFF_LEN];
 } stream_buffer_t;
 
@@ -83,9 +84,12 @@ bool read_msg(Readable auto &reader, stream_buffer_t &stream,
   return true;
 }
 
-using MessageHandler = void (*)(stream_buffer_t &);
+template <typename T>
+concept Callable = requires(T t, stream_buffer_t& stream) {
+    { t(stream) } -> std::same_as<void>;
+};
 
-export int parse(Readable auto &reader, MessageHandler handler) {
+export int parse(Readable auto &reader, Callable auto&& handler) {
   stream_buffer_t stream_buffers[MAX_STREAMS];
   for (int i = 0; i < MAX_STREAMS; i++) {
     stream_buffers[i].offset = 0;

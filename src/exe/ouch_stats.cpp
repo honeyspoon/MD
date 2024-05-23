@@ -127,8 +127,6 @@ args_t parse_args(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   args_t args = parse_args(argc, argv);
 
-  // FileReader reader{args.file_name};
-  // CFileReader reader{args.file_name};
   CMappedFileReader reader{args.file_name};
 
   if (ouch::parser::parse(reader, handler)) {
