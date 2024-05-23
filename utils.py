@@ -37,12 +37,14 @@ def run(exe, args=[]):
     if build_success:
         print("=============")
         print(build_dir, exe, *args)
-        subprocess.run(
+        res = subprocess.run(
             [f"{build_dir}/{exe}", *args],
             cwd=os.getcwd(),
             text=True,
             capture_output=False
         )
+        print("=============")
+        print("return code:", res.returncode)
         print("=============")
         print()
     else:

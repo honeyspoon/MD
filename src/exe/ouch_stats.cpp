@@ -43,7 +43,6 @@ void aggregate_stats() {
                 executed[i],      executed_shares[i], cancelled[i]};
   }
 
-  // aggregate total stats
   stats_t total_stats = {-1};
   for (int i = 0; i < ouch::MAX_STREAMS; i++) {
     total_stats.system_events += system_events[i];
@@ -54,7 +53,6 @@ void aggregate_stats() {
     total_stats.cancelled += cancelled[i];
   }
 
-  // output
   for (int i = 0; i < ouch::MAX_STREAMS; i++) {
     if (stats[i].accepted)
       print_stats(stats[i], std::format("Stream ", i));
@@ -81,29 +79,28 @@ void handleExecuted(stream_buffer_t &stream) {
 
 void handler(stream_buffer_t &stream) {
   auto *msg_header = reinterpret_cast<ouch::msg_header_t *>(stream.buffer);
-  using ouch::message_type_t;
-  message_type_t msg_type =
-      static_cast<message_type_t>(msg_header->message_type);
+  using ouch::msg_type_t;
+  msg_type_t msg_type = static_cast<msg_type_t>(msg_header->msg_type);
 
   switch (msg_type) {
-  case message_type_t::SYSTEM_EVENT:
+  case msg_type_t::SYSTEM_EVENT:
     handleSystemEvent(stream);
     break;
-  case message_type_t::ACCEPTED:
+  case msg_type_t::ACCEPTED:
     handleAccepted(stream);
     break;
-  case message_type_t::EXECUTED:
+  case msg_type_t::EXECUTED:
     handleExecuted(stream);
     break;
-  case message_type_t::REPLACED:
+  case msg_type_t::REPLACED:
     handleReplaced(stream);
     break;
-  case message_type_t::CANCELED:
+  case msg_type_t::CANCELED:
     handleCanceled(stream);
     break;
   default:
     break;
-    println("Unknown message type: ", static_cast<char>(msg_type));
+    println("Unknown message type: ", static_cast<uint8_t>(msg_type));
   }
 }
 
@@ -127,6 +124,7 @@ args_t parse_args(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   args_t args = parse_args(argc, argv);
 
+  println("Parsing ", args.file_name);
   CMappedFileReader reader{args.file_name};
 
   if (ouch::parser::parse(reader, handler)) {

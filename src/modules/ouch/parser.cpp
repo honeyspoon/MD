@@ -19,100 +19,57 @@ uint64_t ntohll(uint64_t n) { return be64toh(n); }
 constexpr int BUFF_LEN = 128;
 export typedef struct {
   uint8_t id;
-  uint8_t offset;
+  uint8_t *bp;
   uint8_t buffer[BUFF_LEN];
 } stream_buffer_t;
 
 bool is_complete(stream_buffer_t &stream) {
   auto *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
+  auto message_length = ntohs(msg_header->message_length);
 
-  if (msg_header->message_length > MAX_MSG_LENGTH) {
-    // no need to reconvert to little endian if it's already in the buffer
-    msg_header->message_length = ntohs(msg_header->message_length);
-    msg_header->timestamp = ntohll(msg_header->timestamp);
-  }
-
-  // incomplete message
-  if (stream.offset != msg_header->message_length + 2) {
-    return false;
-  }
-  stream.offset = 0;
-  return true;
-}
-
-bool read_packet_header(Readable auto &reader, packet_header_t *header) {
-  reader.read(reinterpret_cast<char *>(header), sizeof(packet_header_t));
-
-  // big to little endian conversion
-  header->stream_id = ntohs(header->stream_id);
-  header->packet_length = ntohl(header->packet_length);
-
-  if (reader.eof()) {
+  std::ptrdiff_t buff_size = stream.bp - stream.buffer;
+  if (buff_size != message_length + sizeof(uint16_t)) {
     return false;
   }
 
-  if (reader.error()) {
-    reader.print_error();
-    return false;
-  }
-
-  return true;
-}
-
-bool read_msg(Readable auto &reader, stream_buffer_t &stream,
-              const uint32_t packet_length) {
-  if (packet_length > sizeof(stream.buffer) - stream.offset) {
-    println("Packet length exceeds buffer capacity!");
-    return 1;
-  }
-
-  reader.read(reinterpret_cast<char *>(stream.buffer + stream.offset),
-              packet_length);
-
-  if (reader.error()) {
-    reader.print_error();
-    println("File read error!");
-    return false;
-  }
-
-  if (reader.eof()) {
-    println("End of file reached before completing packet read!");
-    return false;
-  }
-
-  stream.offset += packet_length;
+  stream.bp = stream.buffer;
   return true;
 }
 
 template <typename T>
-concept Callable = requires(T t, stream_buffer_t& stream) {
-    { t(stream) } -> std::same_as<void>;
+concept Callable = requires(T t, stream_buffer_t &stream) {
+  { t(stream) } -> std::same_as<void>;
 };
 
-export int parse(Readable auto &reader, Callable auto&& handler) {
+export int parse(Readable auto &reader, Callable auto &&handler) {
   stream_buffer_t stream_buffers[MAX_STREAMS];
   for (int i = 0; i < MAX_STREAMS; i++) {
-    stream_buffers[i].offset = 0;
+    stream_buffers[i].bp = stream_buffers[i].buffer;
     stream_buffers[i].id = i;
   }
 
-  packet_header_t header;
+  while (!reader.error() && !reader.eof()) {
+    packet_header_t header;
+    reader.read(reinterpret_cast<uint8_t *>(&header), sizeof(packet_header_t));
+    auto stream_id = ntohs(header.stream_id);
+    auto packet_length = ntohl(header.packet_length);
 
-  while (read_packet_header(reader, &header)) {
-    stream_buffer_t &stream = stream_buffers[header.stream_id];
+    stream_buffer_t &stream = stream_buffers[stream_id];
 
-    if (!read_msg(reader, stream, header.packet_length)) {
-      println("ERROR: reading message");
-      return 1;
-    }
+    reader.read(stream.bp, packet_length);
+
+    stream.bp += packet_length;
 
     if (!is_complete(stream))
       continue;
 
+    msg_header_t *msg_header = reinterpret_cast<msg_header_t *>(stream.bp);
+
     handler(stream);
   }
-
+  println("ddddddddd");
   println("End of file reached.");
+
   return 0;
 }
 

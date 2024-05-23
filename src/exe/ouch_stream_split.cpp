@@ -29,16 +29,21 @@ args_t parse_args(int argc, char *argv[]) {
 
 
 std::map<uint8_t, std::unique_ptr<FileWriter>> writers;
-
-
 void handler(ouch::parser::stream_buffer_t &stream) {
    auto it = writers.find(stream.id);
    if (it == writers.end()) {
        auto result = writers.emplace(stream.id, std::make_unique<FileWriter>("out_" + std::to_string(stream.id)));
        it = result.first;
    }
+
    auto *msg_header = reinterpret_cast<ouch::msg_header_t *>(stream.buffer);
-   it->second->write(reinterpret_cast<const char*>(stream.buffer), msg_header->message_length);
+   ouch::packet_header_t packet_header;
+   packet_header.stream_id = htons(stream.id);
+   packet_header.packet_length = sizeof(packet_header) + sizeof(uint16_t) + msg_header->message_length;
+   packet_header.packet_length = htonl(packet_header.packet_length);
+
+   it->second->write(reinterpret_cast<const char*>(&packet_header), sizeof(packet_header));
+   it->second->write(reinterpret_cast<const char*>(stream.buffer), msg_header->message_length + sizeof(uint16_t));
 }
 
 int main(int argc, char *argv[]) {

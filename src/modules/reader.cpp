@@ -11,13 +11,14 @@ import std;
 import log;
 
 export template <typename T>
-concept Readable = requires(T t, char *buffer, size_t size) {
+concept Readable = requires(T t, uint8_t *buffer, size_t size) {
   { t.read(buffer, size) } -> std::same_as<void>;
   { t.eof() } -> std::same_as<bool>;
   { t.error() } -> std::same_as<bool>;
   { t.print_error() } -> std::same_as<void>;
 };
 
+// TODO: use bool operator instread of eof and error
 export class FileReader {
 public:
   FileReader(const std::string file_name)
@@ -26,7 +27,9 @@ public:
 
   FileReader(const FileReader &) = delete;
 
-  void read(char *buffer, size_t size) { m_file->read(buffer, size); }
+  void read(uint8_t *buffer, size_t size) {
+    m_file->read(reinterpret_cast<char *>(buffer), size);
+  }
 
   bool eof() { return m_file && m_file->eof(); }
 
@@ -65,7 +68,7 @@ public:
     }
     m_file_size = st.st_size;
 
-    m_file_data = static_cast<char *>(
+    m_file_data = static_cast<uint8_t *>(
         mmap(NULL, m_file_size, PROT_READ, MAP_PRIVATE, m_fd, 0));
     if (m_file_data == MAP_FAILED) {
       close(m_fd);
@@ -76,7 +79,7 @@ public:
 
   CMappedFileReader(const CMappedFileReader &) = delete;
 
-  void read(char *buffer, size_t size) {
+  void read(uint8_t *buffer, size_t size) {
     if (m_offset + size > m_file_size) {
       m_eof = true;
       size = m_file_size - m_offset;
@@ -98,7 +101,7 @@ private:
   size_t m_offset;
   bool m_eof;
   size_t m_file_size;
-  char *m_file_data;
+  uint8_t *m_file_data;
 };
 static_assert(Readable<CMappedFileReader>);
 
@@ -110,7 +113,9 @@ public:
 
   CFileReader(const CFileReader &) = delete;
 
-  void read(char *buffer, size_t size) { std::fread(buffer, size, 1, m_file); }
+  void read(uint8_t *buffer, size_t size) {
+    std::fread(buffer, size, 1, m_file);
+  }
 
   bool eof() { return std::feof(m_file); }
 
