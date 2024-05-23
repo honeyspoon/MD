@@ -55,7 +55,7 @@ void aggregate_stats() {
 
   for (int i = 0; i < ouch::MAX_STREAMS; i++) {
     if (stats[i].accepted)
-      print_stats(stats[i], std::format("Stream ", i));
+      print_stats(stats[i], std::format("Stream {}", i));
   }
   print_stats(total_stats, "Total");
 }

@@ -63,11 +63,8 @@ export int parse(Readable auto &reader, Callable auto &&handler) {
     if (!is_complete(stream))
       continue;
 
-    msg_header_t *msg_header = reinterpret_cast<msg_header_t *>(stream.bp);
-
     handler(stream);
   }
-  println("ddddddddd");
   println("End of file reached.");
 
   return 0;
