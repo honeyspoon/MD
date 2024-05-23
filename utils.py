@@ -12,6 +12,7 @@ def build(target=""):
         result = subprocess.run(["cmake", "-GNinja", "-B", build_dir], capture_output=False)
         if result.returncode != 0:
             print(f"Failed to create build directory. Error: {result.stderr}")
+            os.rmdir(abs_build_dir)
             sys.exit(result.returncode)
     else:
         print("Reusing existing build directory")

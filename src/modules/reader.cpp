@@ -1,14 +1,13 @@
 module;
+#include "spdlog/spdlog.h"
 
+#include <fstream>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 export module reader;
-
-import std;
-import log;
 
 export template <typename T>
 concept Readable = requires(T t, uint8_t *buffer, size_t size) {
@@ -36,19 +35,6 @@ public:
   bool error() { return m_file && m_file->fail(); }
   size_t gcount() { return m_file ? m_file->gcount() : 0; }
   void print_error() {
-    std::ios_base::iostate state = m_file->rdstate();
-
-    if (state & std::ios_base::eofbit) {
-      println("End of file reached.");
-    }
-    if (state & std::ios_base::failbit) {
-      println("Non-fatal I/O error occurred.");
-    }
-    if (state & std::ios_base::badbit) {
-      println("Fatal I/O error occurred.");
-    }
-
-    std::perror("Error: ");
   }
 
 private:

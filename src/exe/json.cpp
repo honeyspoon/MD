@@ -1,8 +1,8 @@
-#include <cstdint>
-#include <set>
-#include <iostream>
-
 #include "spdlog/spdlog.h"
+
+#include <cstdint>
+#include <iostream>
+#include <string>
 
 import ouch;
 import ouch.parser;
@@ -26,28 +26,23 @@ args_t parse_args(int argc, char *argv[]) {
   return args;
 }
 
-std::set<std::string> symbols;
-
+using namespace ouch::parser;
 void handler(uint8_t, const ouch::msg_header_t *msg_header) {
   using ouch::msg_type_t;
   switch (msg_header->msg_type) {
   case msg_type_t::SYSTEM_EVENT:
     break;
-  case msg_type_t::ACCEPTED: {
-    auto *accepted =
-        reinterpret_cast<const ouch::accepted_message_t *>(msg_header);
-    symbols.emplace(reinterpret_cast<const char *>(accepted->symbol), 8);
+  case msg_type_t::ACCEPTED:
+    break;
+  case msg_type_t::EXECUTED: {
     break;
   }
-  case msg_type_t::EXECUTED:
-    break;
   case msg_type_t::REPLACED:
     break;
   case msg_type_t::CANCELED:
     break;
   default:
-    spdlog::warn("Unknown message type {}",
-                 static_cast<char>(msg_header->msg_type));
+    spdlog::warn("Unknown message type {}", static_cast<char>(msg_header->msg_type));
     break;
   }
 }
@@ -55,19 +50,14 @@ void handler(uint8_t, const ouch::msg_header_t *msg_header) {
 int main(int argc, char *argv[]) {
   args_t args = parse_args(argc, argv);
 
-  spdlog::info("Parsing OUCH file: {}", args.file_name);
-  FileReader reader{args.file_name};
+  spdlog::info("Parsing {}", args.file_name);
+  CMappedFileReader reader{args.file_name};
 
   if (ouch::parser::parse(reader, handler)) {
-    spdlog::error("error parsing file");
+    spdlog::info("Parsing failed");
     return 1;
   }
 
-  for (auto symbol : symbols) {
-    std::cout << symbol << std::endl;
-  }
-
-  spdlog::info("done");
-
+  spdlog::info("Done");
   return 0;
 }

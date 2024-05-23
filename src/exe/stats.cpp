@@ -1,11 +1,10 @@
+#include "spdlog/spdlog.h"
+
 #include <cstdint>
+#include <iostream>
 
 import ouch;
 import ouch.parser;
-
-import log;
-
-import std;
 
 import reader;
 
@@ -20,14 +19,14 @@ struct stats_t {
 };
 
 void print_stats(const stats_t &stat) {
-  println("");
-  println(std::format("Stream {}", stat.id));
-  println("- Accepted ", stat.accepted);
-  println("- System Event ", stat.system_events);
-  println("- Replaced ", stat.replaced);
-  println("- Cancelled ", stat.cancelled);
-  println("- Executed messages ", stat.executed, " | shares ",
-          stat.executed_shares);
+  std::cout << std::endl;
+  std::cout << "Stream " << stat.id << std::endl;
+  std::cout << "- Accepted " << stat.accepted << std::endl;
+  std::cout << "- System Event " << stat.system_events << std::endl;
+  std::cout << "- Replaced " << stat.replaced << std::endl;
+  std::cout << "- Cancelled " << stat.cancelled << std::endl;
+  std::cout << "- Executed messages " << stat.executed << " | shares "
+            << stat.executed_shares << std::endl;
 }
 
 stats_t stats[ouch::MAX_STREAMS];
@@ -59,8 +58,8 @@ void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
     stream_stats.cancelled++;
     break;
   default:
-    println("Unknown message type: ",
-            static_cast<uint8_t>(msg_header->msg_type));
+    spdlog::warn("Unknown message type {}",
+                 static_cast<char>(msg_header->msg_type));
     break;
   }
 }
@@ -85,11 +84,11 @@ args_t parse_args(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   args_t args = parse_args(argc, argv);
 
-  println("Parsing ", args.file_name);
+  spdlog::info("Parsing OUCH file: {}", args.file_name);
   CMappedFileReader reader{args.file_name};
 
   if (ouch::parser::parse(reader, handler)) {
-    println("ERROR: analysis failed");
+    spdlog::error("error parsing file");
     return 1;
   }
 

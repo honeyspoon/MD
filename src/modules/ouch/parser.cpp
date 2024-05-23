@@ -1,11 +1,12 @@
 module;
+#include "spdlog/spdlog.h"
+
 #include <cstdint>
+
 export module ouch.parser;
-import std;
 
 import ouch;
 import reader;
-import log;
 
 namespace ouch {
 namespace parser {
@@ -68,7 +69,8 @@ export int parse(Readable auto &reader, Callable auto &&handler) {
 
     handler(stream_id, msg_header);
   }
-  println("End of file reached.");
+
+  spdlog::info("End of file reached.");
 
   return 0;
 }

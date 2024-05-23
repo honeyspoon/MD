@@ -1,11 +1,13 @@
 #include <cstdint>
+#include <memory>
+#include <iostream>
+#include <map>
+
+#include "spdlog/spdlog.h"
 
 import ouch;
 import ouch.parser;
 
-import log;
-
-import std;
 
 import reader;
 import writer;
@@ -34,8 +36,7 @@ void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
     std::string file_name = std::format("out_{}.bin", stream_id);
     auto result =
         writers.emplace(stream_id, std::make_unique<FileWriter>(file_name));
-    println("Created writer for stream id ", std::to_string(stream_id),
-            " in file ", file_name);
+    spdlog::info("Created writer for stream id {} in file {} ", std::to_string(stream_id), file_name);
     it = result.first;
   }
 
@@ -53,10 +54,11 @@ void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
 int main(int argc, char *argv[]) {
   args_t args = parse_args(argc, argv);
 
-  FileReader reader{args.file_name};
+  spdlog::info("Parsing OUCH file: {}", args.file_name);
+  CMappedFileReader reader{args.file_name};
 
   if (ouch::parser::parse(reader, handler)) {
-    println("ERROR: analysis failed");
+    spdlog::error("error parsing file");
     return 1;
   }
 

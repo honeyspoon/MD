@@ -5,10 +5,9 @@ module;
 #include <sys/stat.h>
 #include <unistd.h>
 
-export module writer;
+#include <fstream>
 
-import std;
-import log;
+export module writer;
 
 export template <typename T>
 concept Writable = requires(T t, char *buffer, size_t size) {
@@ -18,20 +17,23 @@ concept Writable = requires(T t, char *buffer, size_t size) {
 
 export class FileWriter {
 public:
-  FileWriter(const std::string& file_name)
+  FileWriter(const std::string &file_name)
       : m_file(std::make_unique<std::ofstream>(
             file_name, std::ios::out | std::ios::binary)){};
 
   FileWriter(const FileWriter &) = delete;
-  FileWriter& operator=(const FileWriter&) = delete;
+  FileWriter &operator=(const FileWriter &) = delete;
 
-  void write(const char *buffer, const size_t size) { m_file->write(buffer, size); }
+  void write(const char *buffer, const size_t size) {
+    m_file->write(buffer, size);
+  }
 
   bool error() { return m_file && m_file->fail(); }
   ~FileWriter() {
     m_file->flush();
     m_file->close();
   }
+
 private:
   std::unique_ptr<std::ofstream> m_file;
 };
