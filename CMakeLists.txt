@@ -30,6 +30,7 @@ add_compile_options(-fdiagnostics-color=always)
 # dependencies
 find_package(rapidjson REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(ZLIB REQUIRED)
 
 # sources
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/modules/*.cpp")
@@ -46,7 +47,7 @@ foreach(file ${targets})
                              INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/)
   target_sources(${target} PRIVATE ${file})
   target_sources(${target} PRIVATE FILE_SET CXX_MODULES FILES ${SOURCES})
-  target_link_libraries(${target} rapidjson spdlog::spdlog)
+  target_link_libraries(${target} rapidjson spdlog::spdlog ZLIB::ZLIB)
 endforeach()
 
 # log
