@@ -1,4 +1,5 @@
 #include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 #include <cstdint>
 #include <iostream>
@@ -82,6 +83,9 @@ args_t parse_args(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+  auto stderr_logger = spdlog::stderr_color_mt("stderr_logger");
+  spdlog::set_default_logger(stderr_logger);
+
   args_t args = parse_args(argc, argv);
 
   spdlog::info("Parsing OUCH file: {}", args.file_name);
