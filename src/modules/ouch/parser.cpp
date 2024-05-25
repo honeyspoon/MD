@@ -1,7 +1,14 @@
 module;
 #include "spdlog/spdlog.h"
+#include <array>
 #include <cstdint>
 #include <iostream>
+
+#include <algorithm>
+#include <climits>
+#include <concepts>
+#include <cstdint>
+#include <stddef.h>
 
 export module ouch.parser;
 
@@ -45,35 +52,30 @@ concept Callable =
     };
 
 export int parse(Readable auto &reader, Callable auto &&handler) {
-  stream_buffer_t stream_buffers[MAX_STREAMS];
+  std::array<stream_buffer_t, MAX_STREAMS> stream_buffers;
   for (int i = 0; i < MAX_STREAMS; i++) {
     stream_buffers[i].bp = stream_buffers[i].buffer;
     stream_buffers[i].id = i;
   }
 
   while (!reader.error() && !reader.eof()) {
-    packet_header_t header;
+    packet_header_t header{.stream_id = 0, .packet_length = 0};
     reader.read(reinterpret_cast<std::byte *>(&header),
                 sizeof(packet_header_t));
 
-    auto stream_id = ntohs(header.stream_id);
-    auto packet_length = ntohl(header.packet_length);
-    // header.packet_length = ntohl(header.packet_length);
+    hn_swap(header);
 
-    stream_buffer_t &stream = stream_buffers[stream_id];
-    std::cerr << stream_id << std::endl;
+    stream_buffer_t &stream = stream_buffers[header.stream_id];
 
-    reader.read(stream.bp, packet_length);
-    std::cerr << stream_id << std::endl;
-
-    stream.bp += packet_length;
+    reader.read(stream.bp, header.packet_length);
+    stream.bp += header.packet_length;
 
     if (!is_complete(stream))
       continue;
 
     // not const because the handler can change endianness
     msg_header_t *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
-    handler(stream_id, msg_header);
+    handler(header.stream_id, msg_header);
   }
 
   spdlog::info("End of file reached.");

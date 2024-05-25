@@ -9,12 +9,12 @@ Look inside `build_tools.txt`
 
 ## build
 
-`./build`
+`./build`  
 `./build target`
 
 ## build & run
 
-`./run target -- target_args `
+`./run target -- target_args`  
 `./run ouch_stats  --  OUCHLMM2.incoming.packets`
 
 ## watch build & run
@@ -27,7 +27,7 @@ I want to write a bunch of `tranform` binaries that can process market data
 I would them pipe them together through vairous interfaces like files, pipes, socket, share memory, etc  
 I want to measure the latency impact of these pipelines by comparing them to self-contained processes
 
-## TODO:
+## TODO
 
 ### io
 
@@ -51,5 +51,6 @@ I want to measure the latency impact of these pipelines by comparing them to sel
 ### misc
 
 - [ ] call shared library parser from python
+- [ ] implement read ouch protocol
 - [ ] synthetic data generator
 - [ ] change reinterpret_cast to bit_cast

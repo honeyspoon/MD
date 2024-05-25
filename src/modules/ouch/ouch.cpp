@@ -1,40 +1,13 @@
 module;
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <climits>
-#include <algorithm>
 #include <concepts>
 #include <cstdint>
 #include <stddef.h>
 
 export module ouch;
-
-export template <typename T>
-T hn_swap(T u) noexcept {
-    static_assert(std::is_integral_v<T>, "swap_endian can only be used with integral types");
-
-    if constexpr (sizeof(T) == 1) {
-        return u;
-    } else if constexpr (sizeof(T) == 2) {
-        return __builtin_bswap16(u);
-    } else if constexpr (sizeof(T) == 4) {
-        return __builtin_bswap32(u);
-    } else if constexpr (sizeof(T) == 8) {
-        return __builtin_bswap64(u);
-    } else {
-        static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8, "Unsupported type size for endian swap");
-    }
-}
-
-export template <typename T>
-void hn_swap_struct(T& t) {
-    auto* ptr = reinterpret_cast<std::byte*>(&t);
-    for (size_t i = 0; i < sizeof(T); ++i) {
-        if constexpr (std::is_integral_v<decltype(ptr[i])>) {
-            ptr[i] = hn_swap(ptr[i]);
-        }
-    }
-}
 
 export namespace ouch {
 
@@ -67,9 +40,14 @@ struct msg_header_t {
 } __attribute__((packed));
 static_assert(sizeof(msg_header_t) == 12);
 
+enum event_enum_t : uint8_t {
+    SOD = 'S',
+    EOD ='E'
+};
+
 struct system_event_message_t {
   msg_header_t header;
-  uint8_t event_enum;
+  event_enum_t event_enum;
 } __attribute__((packed));
 static_assert(sizeof(system_event_message_t) == 13,
               "Size of system_event_message_t is incorrect");
@@ -133,5 +111,60 @@ struct canceled_message_t {
 } __attribute__((packed));
 static_assert(sizeof(canceled_message_t) == 31,
               "Size of canceled_message_t is incorrect");
+
+template <std::integral T> void hn_swap(T &u) {
+  if constexpr (sizeof(T) == 2) {
+    u = __builtin_bswap16(u);
+  } else if constexpr (sizeof(T) == 4) {
+    u = __builtin_bswap32(u);
+  } else if constexpr (sizeof(T) == 8) {
+    u = __builtin_bswap64(u);
+  } else {
+    static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8,
+                  "Unsupported type size for endian swap");
+  }
+}
+
+void hn_swap(packet_header_t &header) {
+  hn_swap(header.stream_id);
+  hn_swap(header.packet_length);
+}
+
+void hn_swap(msg_header_t &header) {
+  hn_swap(header.message_length);
+  hn_swap(header.timestamp);
+}
+
+void hn_swap(system_event_message_t &msg) { hn_swap(msg.header); }
+
+void hn_swap(accepted_message_t &msg) {
+  hn_swap(msg.header);
+  hn_swap(msg.shares);
+  hn_swap(msg.price);
+  hn_swap(msg.time_in_force);
+  hn_swap(msg.order_reference_number);
+  hn_swap(msg.minimum_quantity);
+}
+
+void hn_swap(replaced_message_t &msg) {
+  hn_swap(msg.header);
+  hn_swap(msg.shares);
+  hn_swap(msg.price);
+  hn_swap(msg.time_in_force);
+  hn_swap(msg.order_reference_number);
+  hn_swap(msg.minimum_quantity);
+}
+
+void hn_swap(executed_message_t &msg) {
+  hn_swap(msg.header);
+  hn_swap(msg.executed_shares);
+  hn_swap(msg.executed_price);
+  hn_swap(msg.match_number);
+}
+
+void hn_swap(canceled_message_t &msg) {
+  hn_swap(msg.header);
+  hn_swap(msg.decrement_shares);
+}
 
 } // namespace ouch
