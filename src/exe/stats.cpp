@@ -1,5 +1,5 @@
-#include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
 
 #include <cstdint>
 #include <iostream>
@@ -32,7 +32,6 @@ void print_stats(const stats_t &stat) {
 
 stats_t stats[ouch::MAX_STREAMS];
 
-using namespace ouch::parser;
 void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
   using ouch::msg_type_t;
   stats_t &stream_stats = stats[stream_id];

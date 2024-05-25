@@ -1,8 +1,9 @@
 module;
 #include "spdlog/spdlog.h"
 
-#include <fstream>
 #include <fcntl.h>
+#include <fstream>
+#include <memory>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -10,7 +11,7 @@ module;
 export module reader;
 
 export template <typename T>
-concept Readable = requires(T t, uint8_t *buffer, size_t size) {
+concept Readable = requires(T t, std::byte *buffer, size_t size) {
   { t.read(buffer, size) } -> std::same_as<void>;
   { t.eof() } -> std::same_as<bool>;
   { t.error() } -> std::same_as<bool>;
@@ -26,7 +27,7 @@ public:
 
   FileReader(const FileReader &) = delete;
 
-  void read(uint8_t *buffer, size_t size) {
+  void read(std::byte *buffer, size_t size) {
     m_file->read(reinterpret_cast<char *>(buffer), size);
   }
 
@@ -34,8 +35,7 @@ public:
 
   bool error() { return m_file && m_file->fail(); }
   size_t gcount() { return m_file ? m_file->gcount() : 0; }
-  void print_error() {
-  }
+  void print_error() {}
 
 private:
   std::unique_ptr<std::ifstream> m_file;
@@ -65,7 +65,7 @@ public:
 
   CMappedFileReader(const CMappedFileReader &) = delete;
 
-  void read(uint8_t *buffer, size_t size) {
+  void read(std::byte *buffer, size_t size) {
     if (m_offset + size > m_file_size) {
       m_eof = true;
       size = m_file_size - m_offset;
@@ -99,7 +99,7 @@ public:
 
   CFileReader(const CFileReader &) = delete;
 
-  void read(uint8_t *buffer, size_t size) {
+  void read(std::byte *buffer, size_t size) {
     std::fread(buffer, size, 1, m_file);
   }
 

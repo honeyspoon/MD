@@ -76,15 +76,17 @@ def run(exe, args=[]):
     build_success, build_dir = build(exe)
 
     if build_success:
-        logger.info(f"{build_dir} {exe} {' '.join(args)}")
+        logger.info(f"{build_dir} {exe} {(' '.join(args)).replace('\\', "")}")
         res = subprocess.run(
             [f"{build_dir}/{exe}", *args],
             cwd=os.getcwd(),
             text=True,
             capture_output=False
         )
-        logger.info(f"return code: {res.returncode}")
-        logger.info("")
+        if res.returncode == 0:
+            logger.info(f"return code: {res.returncode}")
+        else:
+            logger.warn(f"return code: {res.returncode}")
     else:
         logger.error("build failed")
 

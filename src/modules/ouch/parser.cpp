@@ -1,7 +1,7 @@
 module;
 #include "spdlog/spdlog.h"
-
 #include <cstdint>
+#include <iostream>
 
 export module ouch.parser;
 
@@ -18,10 +18,11 @@ uint64_t ntohll(uint64_t n) { return be64toh(n); }
 #endif
 
 constexpr int BUFF_LEN = 128;
+
 export typedef struct {
-  uint8_t id;
-  uint8_t *bp;
-  uint8_t buffer[BUFF_LEN];
+  unsigned int id;
+  std::byte *bp;
+  std::byte buffer[BUFF_LEN];
 } stream_buffer_t;
 
 bool is_complete(stream_buffer_t &stream) {
@@ -38,9 +39,10 @@ bool is_complete(stream_buffer_t &stream) {
 }
 
 template <typename T>
-concept Callable = requires(T t, uint8_t id, const msg_header_t *msg_header) {
-  { t(id, msg_header) } -> std::same_as<void>;
-};
+concept Callable =
+    requires(T t, const unsigned int id, msg_header_t *msg_header) {
+      { t(id, msg_header) } -> std::same_as<void>;
+    };
 
 export int parse(Readable auto &reader, Callable auto &&handler) {
   stream_buffer_t stream_buffers[MAX_STREAMS];
@@ -51,22 +53,26 @@ export int parse(Readable auto &reader, Callable auto &&handler) {
 
   while (!reader.error() && !reader.eof()) {
     packet_header_t header;
-    reader.read(reinterpret_cast<uint8_t *>(&header), sizeof(packet_header_t));
+    reader.read(reinterpret_cast<std::byte *>(&header),
+                sizeof(packet_header_t));
+
     auto stream_id = ntohs(header.stream_id);
     auto packet_length = ntohl(header.packet_length);
+    // header.packet_length = ntohl(header.packet_length);
 
     stream_buffer_t &stream = stream_buffers[stream_id];
+    std::cerr << stream_id << std::endl;
 
     reader.read(stream.bp, packet_length);
+    std::cerr << stream_id << std::endl;
 
     stream.bp += packet_length;
 
     if (!is_complete(stream))
       continue;
 
-    const msg_header_t *msg_header =
-        reinterpret_cast<msg_header_t *>(stream.buffer);
-
+    // not const because the handler can change endianness
+    msg_header_t *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
     handler(stream_id, msg_header);
   }
 

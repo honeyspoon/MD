@@ -1,8 +1,40 @@
 module;
+#include <array>
+#include <bit>
+#include <climits>
+#include <algorithm>
+#include <concepts>
 #include <cstdint>
 #include <stddef.h>
 
 export module ouch;
+
+export template <typename T>
+T hn_swap(T u) noexcept {
+    static_assert(std::is_integral_v<T>, "swap_endian can only be used with integral types");
+
+    if constexpr (sizeof(T) == 1) {
+        return u;
+    } else if constexpr (sizeof(T) == 2) {
+        return __builtin_bswap16(u);
+    } else if constexpr (sizeof(T) == 4) {
+        return __builtin_bswap32(u);
+    } else if constexpr (sizeof(T) == 8) {
+        return __builtin_bswap64(u);
+    } else {
+        static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8, "Unsupported type size for endian swap");
+    }
+}
+
+export template <typename T>
+void hn_swap_struct(T& t) {
+    auto* ptr = reinterpret_cast<std::byte*>(&t);
+    for (size_t i = 0; i < sizeof(T); ++i) {
+        if constexpr (std::is_integral_v<decltype(ptr[i])>) {
+            ptr[i] = hn_swap(ptr[i]);
+        }
+    }
+}
 
 export namespace ouch {
 
