@@ -18,30 +18,25 @@ import reader;
 namespace ouch {
 namespace parser {
 
-#if defined(__linux__)
-#include <endian.h>
-// no need for macos
-uint64_t ntohll(uint64_t n) { return be64toh(n); }
-#endif
-
 constexpr int BUFF_LEN = 128;
 
 export typedef struct {
   unsigned int id;
   std::byte *bp;
-  std::byte buffer[BUFF_LEN];
-} stream_buffer_t;
+  std::array<std::byte, BUFF_LEN> buffer;
+} stream_t;
 
-bool is_complete(stream_buffer_t &stream) {
-  auto *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
-  auto message_length = ntohs(msg_header->message_length);
+bool is_complete(stream_t &stream) {
+  auto *msg_header = std::bit_cast<msg_header_t *>(stream.buffer.data());
+  auto message_length = msg_header->message_length;
+  hn_swap(message_length);
 
-  std::ptrdiff_t buff_size = stream.bp - stream.buffer;
+  std::ptrdiff_t buff_size = stream.bp - stream.buffer.data();
   if (buff_size != message_length + sizeof(uint16_t)) {
     return false;
   }
 
-  stream.bp = stream.buffer;
+  stream.bp = stream.buffer.data();
   return true;
 }
 
@@ -52,20 +47,19 @@ concept Callable =
     };
 
 export int parse(Readable auto &reader, Callable auto &&handler) {
-  std::array<stream_buffer_t, MAX_STREAMS> stream_buffers;
+  std::array<stream_t, MAX_STREAMS> streams;
   for (int i = 0; i < MAX_STREAMS; i++) {
-    stream_buffers[i].bp = stream_buffers[i].buffer;
-    stream_buffers[i].id = i;
+    streams[i].bp = streams[i].buffer.data();
+    streams[i].id = i;
   }
 
   while (!reader.error() && !reader.eof()) {
     packet_header_t header{.stream_id = 0, .packet_length = 0};
-    reader.read(reinterpret_cast<std::byte *>(&header),
-                sizeof(packet_header_t));
+    reader.read(std::bit_cast<std::byte *>(&header), sizeof(packet_header_t));
 
     hn_swap(header);
 
-    stream_buffer_t &stream = stream_buffers[header.stream_id];
+    stream_t &stream = streams[header.stream_id];
 
     reader.read(stream.bp, header.packet_length);
     stream.bp += header.packet_length;
@@ -74,7 +68,8 @@ export int parse(Readable auto &reader, Callable auto &&handler) {
       continue;
 
     // not const because the handler can change endianness
-    msg_header_t *msg_header = reinterpret_cast<msg_header_t *>(stream.buffer);
+    msg_header_t *msg_header =
+        std::bit_cast<msg_header_t *>(stream.buffer.data());
     handler(header.stream_id, msg_header);
   }
 

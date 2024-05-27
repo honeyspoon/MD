@@ -47,7 +47,7 @@ void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
   case msg_type_t::EXECUTED: {
     stream_stats.executed++;
     auto *executed_msg =
-        reinterpret_cast<const ouch::executed_message_t *>(msg_header);
+        std::bit_cast<const ouch::executed_message_t *>(msg_header);
     stream_stats.executed_shares += ntohl(executed_msg->executed_shares);
     break;
   }

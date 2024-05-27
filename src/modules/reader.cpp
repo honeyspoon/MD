@@ -28,7 +28,7 @@ public:
   FileReader(const FileReader &) = delete;
 
   void read(std::byte *buffer, size_t size) {
-    m_file->read(reinterpret_cast<char *>(buffer), size);
+    m_file->read(std::bit_cast<char *>(buffer), size);
   }
 
   bool eof() { return m_file && m_file->eof(); }

@@ -1,14 +1,13 @@
 #include <cstdint>
-#include <memory>
 #include <iostream>
 #include <map>
+#include <memory>
 
-#include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
 
 import ouch;
 import ouch.parser;
-
 
 import reader;
 import writer;
@@ -20,7 +19,8 @@ void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
     std::string file_name = std::format("out_{}.bin", stream_id);
     auto result =
         writers.emplace(stream_id, std::make_unique<FileWriter>(file_name));
-    spdlog::info("Created writer for stream id {} in file {} ", std::to_string(stream_id), file_name);
+    spdlog::info("Created writer for stream id {} in file {} ",
+                 std::to_string(stream_id), file_name);
     it = result.first;
   }
 
@@ -29,9 +29,9 @@ void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
       .packet_length =
           htonl(sizeof(uint16_t) + ntohs(msg_header->message_length))};
 
-  it->second->write(reinterpret_cast<const char *>(&packet_header),
+  it->second->write(std::bit_cast<const char *>(&packet_header),
                     sizeof(packet_header));
-  it->second->write(reinterpret_cast<const char *>(msg_header),
+  it->second->write(std::bit_cast<const char *>(msg_header),
                     ntohs(msg_header->message_length) + sizeof(uint16_t));
 }
 
@@ -51,7 +51,6 @@ args_t parse_args(int argc, char *argv[]) {
 
   return args;
 }
-
 
 int main(int argc, char *argv[]) {
   auto stderr_logger = spdlog::stderr_color_mt("stderr_logger");
