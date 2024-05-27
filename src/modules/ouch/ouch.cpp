@@ -6,6 +6,7 @@ module;
 #include <concepts>
 #include <cstdint>
 #include <stddef.h>
+#include <string>
 
 export module ouch;
 
@@ -105,15 +106,30 @@ static_assert(sizeof(system_event_message_t) == 13,
 
 
 enum order_state_t : uint8_t { LIVE = 'L', DONE = 'D' };
+
+typedef std::array<uint8_t, 8> symbol_t;
+typedef std::array<uint8_t, 14> order_token_t;
+typedef std::array<uint8_t, 4> firm_t;
+
+template <std::size_t N>
+std::string to_string(std::array<uint8_t, N> & e) {
+  return std::string(reinterpret_cast<const char*>(e.data()), N);
+}
+
+template<typename EnumType, typename = std::enable_if_t<std::is_enum_v<EnumType>>>
+std::string to_string(EnumType e) {
+    return std::string(1, static_cast<char>(e));
+}
+
 struct accepted_message_t {
   msg_header_t header;
-  uint8_t order_token[14];
+  order_token_t order_token;
   buy_sell_indicator_t side;
   uint32_t shares;
-  uint8_t symbol[8];
+  symbol_t symbol;
   uint32_t price;
   uint32_t time_in_force;
-  uint8_t firm[4];
+  firm_t firm;
   display_type_t display;
   uint64_t order_reference_number;
   uint8_t order_capacity;
@@ -127,13 +143,13 @@ static_assert(sizeof(accepted_message_t) == 68,
 
 struct replaced_message_t {
   msg_header_t header;
-  uint8_t order_token[14];
+  order_token_t order_token;
   buy_sell_indicator_t side;
   uint32_t shares;
-  uint8_t symbol[8];
+  symbol_t symbol;
   uint32_t price;
   uint32_t time_in_force;
-  uint8_t firm[4];
+  firm_t firm;
   display_type_t display;
   uint64_t order_reference_number;
   uint8_t order_capacity;
@@ -141,10 +157,11 @@ struct replaced_message_t {
   uint32_t minimum_quantity;
   cross_type_t cross_type;
   order_state_t order_state;
-  uint8_t previous_order_token[14];
+  order_token_t previous_order_token;
 } __attribute__((packed));
 static_assert(sizeof(replaced_message_t) == 82,
               "Size of replaced_message_t is incorrect");
+
 
 enum class liquidity_flag_t : char {
     ADDED = 'A',
@@ -180,7 +197,7 @@ enum class liquidity_flag_t : char {
 
 struct executed_message_t {
   msg_header_t header;
-  uint8_t order_token[14];
+  order_token_t order_token;
   uint32_t executed_shares;
   uint32_t executed_price;
   liquidity_flag_t liquidity_flag;
@@ -207,7 +224,7 @@ enum class __attribute__((packed)) cancel_reason_t : uint8_t {
 
 struct canceled_message_t {
   msg_header_t header;
-  uint8_t order_token[14];
+  order_token_t order_token;
   uint32_t decrement_shares;
   cancel_reason_t reason;
 } __attribute__((packed));
