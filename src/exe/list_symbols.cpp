@@ -1,14 +1,14 @@
-#include <cstdint>
-#include <set>
-#include <iostream>
-
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
-
 import ouch;
 import ouch.parser;
 
 import reader;
+
+#include <cstdint>
+#include <iostream>
+#include <set>
+
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
 
 std::set<std::string> symbols;
 
@@ -52,7 +52,6 @@ args_t parse_args(int argc, char *argv[]) {
 
   return args;
 }
-
 
 int main(int argc, char *argv[]) {
   auto stderr_logger = spdlog::stderr_color_mt("stderr_logger");

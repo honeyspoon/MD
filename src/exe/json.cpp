@@ -1,3 +1,8 @@
+import ouch;
+import ouch.parser;
+
+import reader;
+
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
@@ -5,11 +10,6 @@
 #include <iomanip>
 #include <iostream>
 #include <nlohmann/json.hpp>
-
-import ouch;
-import ouch.parser;
-
-import reader;
 
 using json = nlohmann::json;
 
@@ -81,8 +81,7 @@ json to_json(canceled_message_t &m) {
   return json{{"header", to_json(m.header)},
               {"order_token", to_string(m.order_token)},
               {"decrement_shares", m.decrement_shares},
-              {"reason", to_string(m.reason)}
-  };
+              {"reason", to_string(m.reason)}};
 }
 
 void handler(const unsigned int, ouch::msg_header_t *msg_header) {

@@ -24,8 +24,10 @@ Look inside `build_tools.txt`
 ## goal
 
 I want to write a bunch of `transform` binaries that can process market data  
-I would them pipe them together through vairous interfaces like files, pipes, socket, share memory, etc  
-I want to measure the latency impact of these pipelines by comparing them to self-contained processes
+I would them pipe them together through various interfaces
+like files, pipes, socket, share memory, etc  
+I want to measure the latency impact of these pipelines
+by comparing them to self-contained processes
 
 ## TODO
 

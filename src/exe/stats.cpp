@@ -1,13 +1,13 @@
+import ouch;
+import ouch.parser;
+
+import reader;
+
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
 #include <cstdint>
 #include <iostream>
-
-import ouch;
-import ouch.parser;
-
-import reader;
 
 struct stats_t {
   int id;

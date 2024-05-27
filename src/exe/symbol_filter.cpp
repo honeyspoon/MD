@@ -1,3 +1,9 @@
+import ouch;
+import ouch.parser;
+
+import reader;
+import writer;
+
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
@@ -5,19 +11,12 @@
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
-#include <map>
-
-import ouch;
-import ouch.parser;
-
-import reader;
-import writer;
 
 using namespace ouch;
-void write(FileWriter &writer, int16_t stream_id,
-           msg_header_t *msg_header) {
+void write(FileWriter &writer, int16_t stream_id, msg_header_t *msg_header) {
   packet_header_t packet_header{
       .stream_id = htons(stream_id),
       .packet_length =
@@ -46,8 +45,8 @@ const args_t parse_args(const int argc, char *argv[]) {
   return args;
 }
 
-std::string pad(const std::string& str, std::size_t length) {
-    return str + std::string(length - str.size(), ' ');
+std::string pad(const std::string &str, std::size_t length) {
+  return str + std::string(length - str.size(), ' ');
 }
 
 int main(int argc, char *argv[]) {
@@ -64,14 +63,13 @@ int main(int argc, char *argv[]) {
   symbol = pad(symbol, 8);
 
   std::map<order_token_t, std::string> orders;
-  const auto handler = [&writer, &orders, exp_symbol=symbol](const unsigned int id,
-                                         msg_header_t *msg_header) {
+  const auto handler = [&writer, &orders, exp_symbol = symbol](
+                           const unsigned int id, msg_header_t *msg_header) {
     bool keep = true;
 
     switch (msg_header->msg_type) {
     case msg_type_t::SYSTEM_EVENT: {
-      auto *system_event =
-          std::bit_cast<system_event_message_t *>(msg_header);
+      auto *system_event = std::bit_cast<system_event_message_t *>(msg_header);
       break;
     }
     case msg_type_t::ACCEPTED: {
@@ -91,7 +89,7 @@ int main(int argc, char *argv[]) {
     case msg_type_t::REPLACED: {
       auto *replaced = std::bit_cast<replaced_message_t *>(msg_header);
       auto symbol = to_string(replaced->symbol);
-      auto token  = replaced->order_token;
+      auto token = replaced->order_token;
       keep = exp_symbol == symbol;
       orders.insert_or_assign(token, symbol);
       break;

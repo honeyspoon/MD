@@ -1,3 +1,9 @@
+import ouch;
+import ouch.parser;
+
+import reader;
+import writer;
+
 #include <cstdint>
 #include <iostream>
 #include <map>
@@ -6,11 +12,6 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
-import ouch;
-import ouch.parser;
-
-import reader;
-import writer;
 
 std::map<uint8_t, std::unique_ptr<FileWriter>> writers;
 void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
