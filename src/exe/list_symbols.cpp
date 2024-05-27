@@ -10,17 +10,16 @@ import reader;
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
-std::set<std::string> symbols;
+using namespace ouch;
+std::set<symbol_t> symbols;
 
-void handler(uint8_t, const ouch::msg_header_t *msg_header) {
-  using ouch::msg_type_t;
+void handler(uint8_t, msg_header_t *msg_header) {
   switch (msg_header->msg_type) {
   case msg_type_t::SYSTEM_EVENT:
     break;
   case msg_type_t::ACCEPTED: {
-    auto *accepted =
-        reinterpret_cast<const ouch::accepted_message_t *>(msg_header);
-    symbols.emplace(reinterpret_cast<const char *>(accepted->symbol), 8);
+    auto *accepted = std::bit_cast<accepted_message_t *>(msg_header);
+    symbols.emplace(accepted->symbol);
     break;
   }
   case msg_type_t::EXECUTED:
@@ -62,13 +61,13 @@ int main(int argc, char *argv[]) {
   spdlog::info("Parsing OUCH file: {}", args.file_name);
   FileReader reader{args.file_name};
 
-  if (ouch::parser::parse(reader, handler)) {
+  if (parser::parse(reader, handler)) {
     spdlog::error("error parsing file");
     return 1;
   }
 
   for (auto symbol : symbols) {
-    std::cout << symbol << std::endl;
+    std::cout << to_string(symbol) << std::endl;
   }
 
   spdlog::info("done");
