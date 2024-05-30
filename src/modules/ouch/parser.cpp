@@ -1,17 +1,7 @@
-module;
-#include "spdlog/spdlog.h"
-#include <array>
-#include <cstdint>
-#include <iostream>
-
-#include <algorithm>
-#include <climits>
-#include <concepts>
-#include <cstdint>
-#include <stddef.h>
-
 export module ouch.parser;
 
+import std;
+import mlog;
 import ouch;
 import reader;
 
@@ -21,7 +11,7 @@ namespace parser {
 constexpr int BUFF_LEN = 128;
 
 export typedef struct {
-  unsigned int id;
+  stream_id_t id;
   std::byte *bp;
   std::array<std::byte, BUFF_LEN> buffer;
 } stream_t;
@@ -32,7 +22,7 @@ bool is_complete(stream_t &stream) {
   hn_swap(message_length);
 
   std::ptrdiff_t buff_size = stream.bp - stream.buffer.data();
-  if (buff_size != message_length + sizeof(uint16_t)) {
+  if (buff_size != message_length + sizeof(msg_length_t)) {
     return false;
   }
 
@@ -42,15 +32,15 @@ bool is_complete(stream_t &stream) {
 
 template <typename T>
 concept Callable =
-    requires(T t, const unsigned int id, msg_header_t *msg_header) {
+    requires(T t, const stream_id_t id, msg_header_t *msg_header) {
       { t(id, msg_header) } -> std::same_as<void>;
     };
 
 export int parse(Readable auto &reader, Callable auto &&handler) {
   std::array<stream_t, MAX_STREAMS> streams;
-  for (int i = 0; i < MAX_STREAMS; i++) {
+  for (std::size_t i = 0; i < MAX_STREAMS; i++) {
     streams[i].bp = streams[i].buffer.data();
-    streams[i].id = i;
+    streams[i].id = static_cast<stream_id_t>(i);
   }
 
   while (!reader.error() && !reader.eof()) {
@@ -64,8 +54,7 @@ export int parse(Readable auto &reader, Callable auto &&handler) {
     reader.read(stream.bp, header.packet_length);
     stream.bp += header.packet_length;
 
-    if (!is_complete(stream))
-      continue;
+    if (!is_complete(stream)) continue;
 
     // not const because the handler can change endianness
     msg_header_t *msg_header =
@@ -73,10 +62,10 @@ export int parse(Readable auto &reader, Callable auto &&handler) {
     handler(header.stream_id, msg_header);
   }
 
-  spdlog::info("End of file reached.");
+  mlog::info("End of file reached.");
 
   return 0;
 }
 
-} // namespace parser
-}; // namespace ouch
+}  // namespace parser
+};  // namespace ouch

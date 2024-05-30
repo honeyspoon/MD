@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import shutil
 
 import logging
 
@@ -52,7 +53,7 @@ def build(target=""):
             print(line, file=sys.stderr)
         if result.returncode != 0:
             logger.error(f"Failed to create build directory. Error: {result.stderr}")
-            os.rmdir(abs_build_dir)
+            shutil.rmtree(abs_build_dir)
             sys.exit(result.returncode)
     else:
         logger.info("Reusing existing build directory")
@@ -72,16 +73,19 @@ def build(target=""):
     return build_success, build_dir
 
 
-def run(exe, args=[]):
+def run(exe, args=[], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr):
+    print("="*20,file=sys.stderr)
     build_success, build_dir = build(exe)
-
+    print("="*20,file=sys.stderr)
     if build_success:
         logger.info(f"{build_dir} {exe} {(' '.join(args)).replace('\\', "")}")
         res = subprocess.run(
             [f"{build_dir}/{exe}", *args],
             cwd=os.getcwd(),
             text=True,
-            capture_output=False
+            stdin=stdin,
+            stdout=stdout,
+            stderr=stderr
         )
         if res.returncode == 0:
             logger.info(f"return code: {res.returncode}")
@@ -89,12 +93,11 @@ def run(exe, args=[]):
             logger.warn(f"return code: {res.returncode}")
     else:
         logger.error("build failed")
+    print("="*20,file=sys.stderr)
 
 
-def watch(exe, args=[]):
-    run(exe, args)
+def watch(exts):
     logger.info("Watching for file changes ...")
-    exts = [".cpp", ".h", "CMakeLists.txt"]
     fswatch_cmd = ["fswatch", "-1", os.getcwd(), "-e", "out"]
     while True:
         process = subprocess.Popen(fswatch_cmd, stdout=subprocess.PIPE, text=True)
@@ -105,9 +108,6 @@ def watch(exe, args=[]):
             files = set([file.replace("~","").strip() for file in files if any(ext in file for ext in exts) ])
             
             if files:
-                print("="*20,file=sys.stderr)
-                logger.info("files changed:\n" + "\n".join(files))
-                print("="*20,file=sys.stderr)
-                run(exe, args)
+                yield files
 
 

@@ -5,9 +5,9 @@ module;
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <fstream>
-
 export module writer;
+
+import std;
 
 export template <typename T>
 concept Writable = requires(T t, char *buffer, size_t size) {

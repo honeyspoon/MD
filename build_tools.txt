@@ -2,5 +2,5 @@ Project: market_data
 Version: 1.0
 C++ Standard: 23
 Compiler: /opt/homebrew/opt/llvm/bin/clang++
-Compiler Version: 18.1.5
+Compiler Version: 19.0.0
 Generator: Ninja

@@ -1,14 +1,42 @@
-# See https://clang.llvm.org/extra/clang-tidy/checks/list.html
-
-Checks: "
-  -*,
-  llvm-*,
+Checks: >-
+  cert-*,
+  clang-analyzer-*,
+  clang-diagnostic-*,
+  bugprone-*,
+  cppcoreguidelines-*,
+  google-*,
+  modernize-*,
   misc-*,
-  -misc-const-correctness,
-  -misc-unused-parameters,
+  openmp-*,
+  performance-*,
+  readability-*,
+  -readability-identifier-length,
+  -*-avoid-c-arrays,
+  -bugprone-easily-swappable-parameters,
+  -cert-err58-cpp,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -misc-non-private-member-variables-in-classes,
-  -misc-no-recursion,
-  -misc-use-anonymous-namespace,
-  -readability-qualified-auto,
-  -llvm-qualified-auto
-  "
+  -readability-function-cognitive-complexity,
+  -readability-magic-numbers,
+  -readability-redundant-declaration,
+  -misc-include-cleaner,
+WarningsAsErrors: ""
+HeaderFileExtensions:
+  - ""
+  - h
+  - hh
+  - hpp
+  - hxx
+ImplementationFileExtensions:
+  - c
+  - cc
+  - cpp
+  - cxx
+HeaderFilterRegex: '^(?!.*\/build.*\/).*'
+SystemHeaders: false
+FormatStyle: file
+CheckOptions:
+  readability-identifier-naming.ClassMethodCase: "camelBack"

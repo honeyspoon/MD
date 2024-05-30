@@ -2,7 +2,8 @@
 #set filetype=python
 
 import argparse
-import utils
+import sys
+import python_src.build_utils as utils
 
 
 if __name__ == "__main__":
@@ -13,8 +14,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    utils.run(args.exe, args.positional_args)
+
     if args.watch:
-        utils.watch(args.exe, args.positional_args)
-    else:
-        utils.run(args.exe, args.positional_args)
+        exts = [".cpp", ".h", "CMakeLists.txt", ".py"]
+        for files in utils.watch(exts):
+            print("\033c", file=sys.stderr)
+            utils.run(args.exe, args.positional_args)
 

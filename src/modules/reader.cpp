@@ -1,14 +1,15 @@
 module;
-#include "spdlog/spdlog.h"
 
 #include <fcntl.h>
-#include <fstream>
-#include <memory>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cstdint>
+
 export module reader;
+import std;
+import mlog;
 
 export template <typename T>
 concept Readable = requires(T t, std::byte *buffer, size_t size) {
@@ -18,9 +19,39 @@ concept Readable = requires(T t, std::byte *buffer, size_t size) {
   { t.print_error() } -> std::same_as<void>;
 };
 
+export class StreamReader {
+ public:
+  StreamReader(std::istream &stream) : m_stream(stream), m_eof(false) {}
+
+  void read(std::byte *buffer, size_t size) {
+    m_stream.read(reinterpret_cast<char *>(buffer), size);
+    m_eof = m_stream.eof();
+  }
+
+  bool eof() {
+    return m_eof;
+  }
+
+  bool error() {
+    return m_stream.fail();
+  }
+
+  void print_error() {
+    if (m_stream.fail()) {
+      mlog::error("Stream read error");
+    }
+  }
+
+ private:
+  std::istream &m_stream;
+  bool m_eof;
+};
+
+static_assert(Readable<StreamReader>);
+
 // TODO: use bool operator instread of eof and error
 export class FileReader {
-public:
+ public:
   FileReader(const std::string file_name)
       : m_file(std::make_unique<std::ifstream>(
             file_name, std::ios::in | std::ios::binary)){};
@@ -31,22 +62,34 @@ public:
     m_file->read(std::bit_cast<char *>(buffer), size);
   }
 
-  bool eof() { return m_file && m_file->eof(); }
+  bool eof() {
+    return m_file && m_file->eof();
+  }
 
-  bool error() { return m_file && m_file->fail(); }
-  size_t gcount() { return m_file ? m_file->gcount() : 0; }
+  bool error() {
+    return m_file && m_file->fail();
+  }
+
+  size_t gcount() {
+    return m_file ? m_file->gcount() : 0;
+  }
+
   void print_error() {}
 
-private:
+ private:
   std::unique_ptr<std::ifstream> m_file;
 };
+
 static_assert(Readable<FileReader>);
 
 export class CMappedFileReader {
-public:
+ public:
   CMappedFileReader(const std::string file_name)
-      : m_fd(open(file_name.c_str(), O_RDONLY)), m_offset(0), m_eof(false),
-        m_file_size(0), m_file_data(nullptr) {
+      : m_fd(open(file_name.c_str(), O_RDONLY)),
+        m_offset(0),
+        m_eof(false),
+        m_file_size(0),
+        m_file_data(nullptr) {
     struct stat st;
     if (fstat(m_fd, &st) == -1) {
       close(m_fd);
@@ -66,33 +109,41 @@ public:
   CMappedFileReader(const CMappedFileReader &) = delete;
 
   void read(std::byte *buffer, size_t size) {
-    if (m_offset + size > m_file_size) {
+    auto size_left = static_cast<size_t>(m_file_size - m_offset);
+    if (size > size_left) {
       m_eof = true;
-      size = m_file_size - m_offset;
+      size = size_left;
     }
     std::memcpy(buffer, m_file_data + m_offset, size);
     m_offset += size;
   }
 
-  bool eof() { return m_eof; }
+  bool eof() {
+    return m_eof;
+  }
 
-  bool error() { return false; }
+  bool error() {
+    return false;
+  }
 
   void print_error() {}
 
-  ~CMappedFileReader() { close(m_fd); }
+  ~CMappedFileReader() {
+    close(m_fd);
+  }
 
-private:
+ private:
   int m_fd;
-  size_t m_offset;
+  off_t m_offset;
   bool m_eof;
-  size_t m_file_size;
+  off_t m_file_size;
   uint8_t *m_file_data;
 };
+
 static_assert(Readable<CMappedFileReader>);
 
 export class CFileReader {
-public:
+ public:
   CFileReader(std::string file_name) {
     m_file = std::fopen(file_name.c_str(), "r");
   }
@@ -103,17 +154,27 @@ public:
     std::fread(buffer, size, 1, m_file);
   }
 
-  bool eof() { return std::feof(m_file); }
+  bool eof() {
+    return std::feof(m_file);
+  }
 
-  bool error() { return std::ferror(m_file); }
-  size_t gcount() { return m_file ? m_gcount : 0; }
+  bool error() {
+    return std::ferror(m_file);
+  }
+
+  size_t gcount() {
+    return m_file ? m_gcount : 0;
+  }
 
   void print_error() {}
 
-  ~CFileReader() { std::fclose(m_file); }
+  ~CFileReader() {
+    std::fclose(m_file);
+  }
 
-private:
+ private:
   std::FILE *m_file;
-  int m_gcount;
+  size_t m_gcount;
 };
+
 static_assert(Readable<CFileReader>);

@@ -1,19 +1,15 @@
+import json;
+
+import std;
+import mlog;
+
 import ouch;
 import ouch.parser;
 
 import reader;
 
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
-
-#include <cstdint>
-#include <iomanip>
-#include <iostream>
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
-
 using namespace ouch;
+
 json to_json(msg_header_t &m) {
   return json{{"message_length", m.message_length},
               {"packet_type", to_string(m.packet_type)},
@@ -84,45 +80,43 @@ json to_json(canceled_message_t &m) {
               {"reason", to_string(m.reason)}};
 }
 
-void handler(const unsigned int, ouch::msg_header_t *msg_header) {
-
-  using ouch::msg_type_t;
+void handler(const stream_id_t, ouch::msg_header_t *msg_header) {
   switch (msg_header->msg_type) {
-  case msg_type_t::SYSTEM_EVENT: {
-    auto *system_event =
-        std::bit_cast<ouch::system_event_message_t *>(msg_header);
-    hn_swap(*system_event);
-    std::cout << to_json(*system_event).dump() << std::endl;
-    break;
-  }
-  case msg_type_t::ACCEPTED: {
-    auto *accepted = std::bit_cast<ouch::accepted_message_t *>(msg_header);
-    hn_swap(*accepted);
-    std::cout << to_json(*accepted).dump() << std::endl;
-    break;
-  }
-  case msg_type_t::EXECUTED: {
-    auto *executed = std::bit_cast<ouch::executed_message_t *>(msg_header);
-    hn_swap(*executed);
-    std::cout << to_json(*executed).dump() << std::endl;
-    break;
-  }
-  case msg_type_t::REPLACED: {
-    auto *replaced = std::bit_cast<ouch::replaced_message_t *>(msg_header);
-    hn_swap(*replaced);
-    std::cout << to_json(*replaced).dump() << std::endl;
-    break;
-  }
-  case msg_type_t::CANCELED: {
-    auto *cancelled = std::bit_cast<ouch::canceled_message_t *>(msg_header);
-    hn_swap(*cancelled);
-    std::cout << to_json(*cancelled).dump() << std::endl;
-    break;
-  }
-  default:
-    spdlog::warn("Unknown message type {}",
+    case msg_type_t::SYSTEM_EVENT: {
+      auto *system_event =
+          std::bit_cast<ouch::system_event_message_t *>(msg_header);
+      hn_swap(*system_event);
+      std::cout << to_json(*system_event).dump() << std::endl;
+      break;
+    }
+    case msg_type_t::ACCEPTED: {
+      auto *accepted = std::bit_cast<ouch::accepted_message_t *>(msg_header);
+      hn_swap(*accepted);
+      std::cout << to_json(*accepted).dump() << std::endl;
+      break;
+    }
+    case msg_type_t::EXECUTED: {
+      auto *executed = std::bit_cast<ouch::executed_message_t *>(msg_header);
+      hn_swap(*executed);
+      std::cout << to_json(*executed).dump() << std::endl;
+      break;
+    }
+    case msg_type_t::REPLACED: {
+      auto *replaced = std::bit_cast<ouch::replaced_message_t *>(msg_header);
+      hn_swap(*replaced);
+      std::cout << to_json(*replaced).dump() << std::endl;
+      break;
+    }
+    case msg_type_t::CANCELED: {
+      auto *cancelled = std::bit_cast<ouch::canceled_message_t *>(msg_header);
+      hn_swap(*cancelled);
+      std::cout << to_json(*cancelled).dump() << std::endl;
+      break;
+    }
+    default:
+      mlog::warn("Unknown message type {}",
                  static_cast<char>(msg_header->msg_type));
-    break;
+      break;
   }
 }
 
@@ -144,19 +138,16 @@ const args_t parse_args(const int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-  const auto stderr_logger = spdlog::stderr_color_mt("stderr");
-  spdlog::set_default_logger(stderr_logger);
-
   const args_t args = parse_args(argc, argv);
 
-  spdlog::info("Parsing {}", args.file_name);
+  mlog::info("Parsing {}", args.file_name);
   CMappedFileReader reader{args.file_name};
 
   if (ouch::parser::parse(reader, handler)) {
-    spdlog::info("Parsing failed");
+    mlog::info("Parsing failed");
     return 1;
   }
 
-  spdlog::info("Done");
+  mlog::info("Done");
   return 0;
 }

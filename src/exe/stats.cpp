@@ -1,13 +1,9 @@
+import std;
 import ouch;
 import ouch.parser;
+import mlog;
 
 import reader;
-
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
-
-#include <cstdint>
-#include <iostream>
 
 struct stats_t {
   int id;
@@ -30,37 +26,42 @@ void print_stats(const stats_t &stat) {
             << stat.executed_shares << std::endl;
 }
 
-stats_t stats[ouch::MAX_STREAMS];
+using namespace ouch;
+stats_t stats[MAX_STREAMS];
 
-void handler(uint8_t stream_id, const ouch::msg_header_t *msg_header) {
-  using ouch::msg_type_t;
+void handler(stream_id_t stream_id, msg_header_t *msg_header) {
   stats_t &stream_stats = stats[stream_id];
   stream_stats.id = stream_id;
 
   switch (msg_header->msg_type) {
-  case msg_type_t::SYSTEM_EVENT:
-    stream_stats.system_events++;
-    break;
-  case msg_type_t::ACCEPTED:
-    stream_stats.accepted++;
-    break;
-  case msg_type_t::EXECUTED: {
-    stream_stats.executed++;
-    auto *executed_msg =
-        std::bit_cast<const ouch::executed_message_t *>(msg_header);
-    stream_stats.executed_shares += ntohl(executed_msg->executed_shares);
-    break;
-  }
-  case msg_type_t::REPLACED:
-    stream_stats.replaced++;
-    break;
-  case msg_type_t::CANCELED:
-    stream_stats.cancelled++;
-    break;
-  default:
-    spdlog::warn("Unknown message type {}",
+    case msg_type_t::SYSTEM_EVENT: {
+      stream_stats.system_events++;
+      break;
+    }
+    case msg_type_t::ACCEPTED: {
+      stream_stats.accepted++;
+      break;
+    }
+    case msg_type_t::EXECUTED: {
+      stream_stats.executed++;
+      auto *executed_msg = std::bit_cast<executed_message_t *>(msg_header);
+      stream_stats.executed_shares +=
+          hn_swap_copy(executed_msg->executed_shares);
+      break;
+    }
+    case msg_type_t::REPLACED: {
+      stream_stats.replaced++;
+      break;
+    }
+    case msg_type_t::CANCELED: {
+      stream_stats.cancelled++;
+      break;
+    }
+    default: {
+      mlog::warn("Unknown message type {}",
                  static_cast<char>(msg_header->msg_type));
-    break;
+      break;
+    }
   }
 }
 
@@ -82,16 +83,13 @@ args_t parse_args(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-  auto stderr_logger = spdlog::stderr_color_mt("stderr_logger");
-  spdlog::set_default_logger(stderr_logger);
-
   args_t args = parse_args(argc, argv);
 
-  spdlog::info("Parsing OUCH file: {}", args.file_name);
+  mlog::info("Parsing OUCH file: {}", args.file_name);
   CMappedFileReader reader{args.file_name};
 
-  if (ouch::parser::parse(reader, handler)) {
-    spdlog::error("error parsing file");
+  if (parser::parse(reader, handler)) {
+    mlog::error("error parsing file");
     return 1;
   }
 
