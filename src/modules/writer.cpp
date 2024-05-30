@@ -16,7 +16,7 @@ concept Writable = requires(T t, char *buffer, size_t size) {
 };
 
 export class FileWriter {
-public:
+ public:
   FileWriter(const std::string &file_name)
       : m_file(std::make_unique<std::ofstream>(
             file_name, std::ios::out | std::ios::binary)){};
@@ -28,14 +28,38 @@ public:
     m_file->write(buffer, size);
   }
 
-  bool error() { return m_file && m_file->fail(); }
+  bool error() {
+    return m_file && m_file->fail();
+  }
+
   ~FileWriter() {
     m_file->flush();
     m_file->close();
   }
 
-private:
+ private:
   std::unique_ptr<std::ofstream> m_file;
 };
 
 static_assert(Writable<FileWriter>);
+
+export class StreamWriter {
+ public:
+  StreamWriter(std::ostream &stream) : m_stream(stream) {}
+
+  bool error() {
+    return m_stream.fail();
+  }
+
+  StreamWriter(const StreamWriter &) = delete;
+  StreamWriter &operator=(const StreamWriter &) = delete;
+
+  void write(const char *buffer, const size_t size) {
+    m_stream.write(buffer, size);
+  }
+
+ private:
+  std::ostream &m_stream;
+};
+
+static_assert(Writable<StreamWriter>);

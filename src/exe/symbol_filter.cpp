@@ -27,18 +27,37 @@ void write(FileWriter &writer, stream_id_t stream_id,
 }
 
 struct args_t {
-  std::string file_name;
+  std::string symbol;
+  std::string input_file_name;
+  std::string output_file_name;
 };
 
 const args_t parse_args(const int argc, char *argv[]) {
   args_t args;
 
+  bool good = true;
   if (argc < 2) {
-    std::cerr << "Error: No filename provided" << std::endl;
+    std::cerr << "Error: No input filename provided" << std::endl;
+    good = false;
+  }
+
+  if (argc < 3) {
+    std::cerr << "Error: No input filename provided" << std::endl;
+    good = false;
+  }
+
+  if (argc < 4) {
+    std::cerr << "Error: No output filename provided" << std::endl;
+    good = false;
+  }
+
+  if (!good) {
     std::exit(1);
   }
 
-  args.file_name = argv[1];
+  args.symbol = argv[1];
+  args.input_file_name = argv[2];
+  args.output_file_name = argv[3];
 
   return args;
 }
@@ -50,22 +69,23 @@ std::string pad(const std::string &str, std::size_t length) {
 int main(int argc, char *argv[]) {
   const args_t args = parse_args(argc, argv);
 
-  mlog::info("Parsing {}", args.file_name);
-  CMappedFileReader reader{args.file_name};
+  mlog::info("Parsing {}", args.input_file_name);
+  mlog::info("Keeping symbol {}", args.symbol);
+  mlog::info("Outputting to {}", args.output_file_name);
 
-  std::string symbol = "SMDV";
-  FileWriter writer{std::format("{}.bin", symbol)};
+  FileReader reader{args.input_file_name};
+  FileWriter writer{args.output_file_name};
+  std::string symbol = args.symbol;
+
   symbol = pad(symbol, 8);
 
   std::map<order_token_t, std::string> orders;
   const auto handler = [&writer, &orders, exp_symbol = symbol](
-                           const unsigned int id, msg_header_t *msg_header) {
+                           const stream_id_t id, msg_header_t *msg_header) {
     bool keep = true;
 
     switch (msg_header->msg_type) {
       case msg_type_t::SYSTEM_EVENT: {
-        auto *system_event =
-            std::bit_cast<system_event_message_t *>(msg_header);
         break;
       }
       case msg_type_t::ACCEPTED: {
