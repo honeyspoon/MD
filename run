@@ -8,17 +8,17 @@ import python_src.build_utils as utils
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("exe")
+    parser.add_argument("target", choices=utils.get_targets(), help="Target to build")
     parser.add_argument("--watch",  action='store_true')
     parser.add_argument("positional_args", nargs="*", help="Positional arguments after --")
 
     args = parser.parse_args()
 
-    utils.run(args.exe, args.positional_args)
+    utils.run(args.target, args.positional_args)
 
     if args.watch:
         exts = [".cpp", ".h", "CMakeLists.txt", ".py"]
         for files in utils.watch(exts):
             print("\033c", file=sys.stderr)
-            utils.run(args.exe, args.positional_args)
+            utils.run(args.target, args.positional_args)
 
