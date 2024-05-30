@@ -14,9 +14,9 @@ import mlog;
 export template <typename T>
 concept Readable = requires(T t, std::byte *buffer, size_t size) {
   { t.read(buffer, size) } -> std::same_as<void>;
+  { bool(t) } -> std::same_as<bool>;
   { t.eof() } -> std::same_as<bool>;
   { t.error() } -> std::same_as<bool>;
-  { t.print_error() } -> std::same_as<void>;
 };
 
 export class StreamReader {
@@ -36,10 +36,8 @@ export class StreamReader {
     return m_stream.fail();
   }
 
-  void print_error() {
-    if (m_stream.fail()) {
-      mlog::error("Stream read error");
-    }
+  operator bool() {
+    return !eof() and !error();
   }
 
  private:
@@ -49,7 +47,6 @@ export class StreamReader {
 
 static_assert(Readable<StreamReader>);
 
-// TODO: use bool operator instread of eof and error
 export class FileReader {
  public:
   FileReader(const std::string file_name)
@@ -70,11 +67,9 @@ export class FileReader {
     return m_file && m_file->fail();
   }
 
-  size_t gcount() {
-    return m_file ? m_file->gcount() : 0;
+  operator bool() {
+    return !eof() and !error();
   }
-
-  void print_error() {}
 
  private:
   std::unique_ptr<std::ifstream> m_file;
@@ -126,7 +121,9 @@ export class CMappedFileReader {
     return false;
   }
 
-  void print_error() {}
+  operator bool() {
+    return !eof() and !error();
+  }
 
   ~CMappedFileReader() {
     close(m_fd);
@@ -162,11 +159,9 @@ export class CFileReader {
     return std::ferror(m_file);
   }
 
-  size_t gcount() {
-    return m_file ? m_gcount : 0;
+  operator bool() {
+    return !eof() and !error();
   }
-
-  void print_error() {}
 
   ~CFileReader() {
     std::fclose(m_file);

@@ -43,7 +43,7 @@ export int parse(Readable auto &reader, Callable auto &&handler) {
     streams[i].id = static_cast<stream_id_t>(i);
   }
 
-  while (!reader.error() && !reader.eof()) {
+  while (reader) {
     packet_header_t header{.stream_id = 0, .packet_length = 0};
     reader.read(std::bit_cast<std::byte *>(&header), sizeof(packet_header_t));
 
