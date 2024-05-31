@@ -1,3 +1,5 @@
+#include <cxxopts.hpp>
+
 import std;
 import ouch;
 import ouch.parser;
@@ -65,28 +67,17 @@ void handler(stream_id_t stream_id, msg_header_t *msg_header) {
   }
 }
 
-struct args_t {
-  std::string file_name;
-};
-
-args_t parse_args(int argc, char *argv[]) {
-  args_t args;
-
-  if (argc < 2) {
-    std::cerr << "Error: No filename provided" << std::endl;
-    std::exit(1);
-  }
-
-  args.file_name = argv[1];
-
-  return args;
-}
-
 int main(int argc, char *argv[]) {
-  args_t args = parse_args(argc, argv);
+  cxxopts::Options options("stats", "get stats for a stream");
 
-  mlog::info("Parsing OUCH file: {}", args.file_name);
-  CMappedFileReader reader{args.file_name};
+  options.add_options()("i,input_file", "Input file name",
+                        cxxopts::value<std::string>());
+
+  auto result = options.parse(argc, argv);
+  auto input_file = result["input_file"].as<std::string>();
+
+  mlog::info("Parsing OUCH file: {}", input_file);
+  CMappedFileReader reader{input_file};
 
   if (parser::parse(reader, handler)) {
     mlog::error("error parsing file");

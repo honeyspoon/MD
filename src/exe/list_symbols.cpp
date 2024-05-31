@@ -1,3 +1,5 @@
+#include <cxxopts.hpp>
+
 import std;
 import mlog;
 
@@ -30,26 +32,16 @@ void handler(const stream_id_t, msg_header_t *msg_header) {
   }
 }
 
-struct args_t {
-  std::string file_name;
-};
-
-args_t parse_args(int argc, char *argv[]) {
-  args_t args;
-
-  if (argc < 2) {
-    std::cerr << "Error: No filename provided" << std::endl;
-    std::exit(1);
-  }
-
-  args.file_name = argv[1];
-
-  return args;
-}
-
 int main(int argc, char *argv[]) {
-  args_t args = parse_args(argc, argv);
-  if (args.file_name == "-") {
+  cxxopts::Options options("list symbols", "list symbols in ouch file");
+
+  options.add_options()("i,input_file", "Input file name",
+                        cxxopts::value<std::string>());
+
+  auto result = options.parse(argc, argv);
+  auto input_file = result["input_file"].as<std::string>();
+
+  if (input_file == "-") {
     mlog::info("Parsing OUCH file from STDIN");
     StreamReader reader{std::cin};
     if (parser::parse(reader, handler)) {
@@ -57,8 +49,8 @@ int main(int argc, char *argv[]) {
       return 1;
     }
   } else {
-    mlog::info("Parsing OUCH file: {}", args.file_name);
-    FileReader reader{args.file_name};
+    mlog::info("Parsing OUCH file: {}", input_file);
+    FileReader reader{input_file};
     if (parser::parse(reader, handler)) {
       mlog::error("error parsing file");
       return 1;

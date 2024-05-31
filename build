@@ -7,7 +7,7 @@ import python_src.build_utils as utils
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("target", choices=utils.get_targets(), help="Target to build")
+    parser.add_argument("target", choices=[*utils.get_targets(), 'all'], help="Target to build")
 
     args = parser.parse_args()
     utils.build(args.target)

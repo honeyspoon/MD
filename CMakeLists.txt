@@ -56,7 +56,7 @@ add_compile_options(
 )
 
 
-add_compile_options(-O3)
+# add_compile_options(-O3)
 
 add_compile_options(
     -fsanitize=address
@@ -89,8 +89,15 @@ add_link_options(-flto)
 add_compile_options(-fdiagnostics-color=always)
 
 # dependencies
-find_package(ZLIB REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(cxxopts CONFIG REQUIRED)
+
+set(LIBS
+  nlohmann_json::nlohmann_json
+  ZLIB::ZLIB
+  cxxopts::cxxopts
+)
 
 # sources
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/modules/*.cpp")
@@ -106,7 +113,7 @@ foreach(file ${targets})
   target_sources(${target} PRIVATE ${file})
   target_sources(${target} PRIVATE FILE_SET CXX_MODULES FILES ${SOURCES})
   target_compile_features(${target} PUBLIC cxx_std_23)
-  target_link_libraries(${target} nlohmann_json::nlohmann_json ZLIB::ZLIB)
+  target_link_libraries(${target} PRIVATE ${LIBS})
 endforeach()
 
 # log

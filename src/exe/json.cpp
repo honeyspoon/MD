@@ -1,3 +1,5 @@
+#include <cxxopts.hpp>
+
 import json;
 
 import std;
@@ -138,10 +140,16 @@ const args_t parse_args(const int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-  const args_t args = parse_args(argc, argv);
+  cxxopts::Options options("json", "to json");
 
-  mlog::info("Parsing {}", args.file_name);
-  CMappedFileReader reader{args.file_name};
+  options.add_options()("i,input_file", "Input file name",
+                        cxxopts::value<std::string>());
+
+  auto result = options.parse(argc, argv);
+  auto input_file = result["input_file"].as<std::string>();
+
+  mlog::info("Parsing {}", input_file);
+  CMappedFileReader reader{input_file};
 
   if (ouch::parser::parse(reader, handler)) {
     mlog::info("Parsing failed");

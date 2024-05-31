@@ -1,3 +1,5 @@
+#include <cxxopts.hpp>
+
 import std;
 import mlog;
 
@@ -26,56 +28,30 @@ void write(FileWriter &writer, stream_id_t stream_id,
                msg_length + sizeof(stream_id_t));
 }
 
-struct args_t {
-  std::string symbol;
-  std::string input_file_name;
-  std::string output_file_name;
-};
-
-const args_t parse_args(const int argc, char *argv[]) {
-  args_t args;
-
-  bool good = true;
-  if (argc < 2) {
-    std::cerr << "Error: No input filename provided" << std::endl;
-    good = false;
-  }
-
-  if (argc < 3) {
-    std::cerr << "Error: No input filename provided" << std::endl;
-    good = false;
-  }
-
-  if (argc < 4) {
-    std::cerr << "Error: No output filename provided" << std::endl;
-    good = false;
-  }
-
-  if (!good) {
-    std::exit(1);
-  }
-
-  args.symbol = argv[1];
-  args.input_file_name = argv[2];
-  args.output_file_name = argv[3];
-
-  return args;
-}
-
 std::string pad(const std::string &str, std::size_t length) {
   return str + std::string(length - str.size(), ' ');
 }
 
 int main(int argc, char *argv[]) {
-  const args_t args = parse_args(argc, argv);
+  cxxopts::Options options("MyProgram", "One line description of MyProgram");
 
-  mlog::info("Parsing {}", args.input_file_name);
-  mlog::info("Keeping symbol {}", args.symbol);
-  mlog::info("Outputting to {}", args.output_file_name);
+  options.add_options()("i,input_file", "Input file name",
+                        cxxopts::value<std::string>())(
+      "o,output_file", "Ouput file name", cxxopts::value<std::string>())(
+      "s,symbol", "Symbol", cxxopts::value<std::string>());
 
-  FileReader reader{args.input_file_name};
-  FileWriter writer{args.output_file_name};
-  std::string symbol = args.symbol;
+  auto result = options.parse(argc, argv);
+
+  auto input_file_name = result["input_file"].as<std::string>();
+  auto output_file_name = result["output_file"].as<std::string>();
+  auto symbol = result["symbol"].as<std::string>();
+
+  mlog::info("Parsing {}", input_file_name);
+  mlog::info("Outputing to {}", output_file_name);
+  mlog::info("Keeping symbol {}", symbol);
+
+  FileReader reader{input_file_name};
+  FileWriter writer{output_file_name};
 
   symbol = pad(symbol, 8);
 

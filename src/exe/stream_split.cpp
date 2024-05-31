@@ -1,3 +1,5 @@
+#include <cxxopts.hpp>
+
 import std;
 
 import mlog;
@@ -36,28 +38,21 @@ void handler(stream_id_t stream_id, const msg_header_t *msg_header) {
                     msg_length + sizeof(stream_id_t));
 }
 
-struct args_t {
-  std::string file_name;
-};
-
-args_t parse_args(int argc, char *argv[]) {
-  args_t args;
-
-  if (argc < 2) {
-    std::cerr << "Error: No filename provided" << std::endl;
-    std::exit(1);
-  }
-
-  args.file_name = argv[1];
-
-  return args;
-}
-
 int main(int argc, char *argv[]) {
-  args_t args = parse_args(argc, argv);
+  cxxopts::Options options(
+      "stream split",
+      "split a file containing ouch streams into individual files per stream");
 
-  mlog::info("Parsing OUCH file: {}", args.file_name);
-  CMappedFileReader reader{args.file_name};
+  options.add_options()("i,input_file", "Input file name",
+                        cxxopts::value<std::string>())(
+      "o,output_file", "Ouput file name", cxxopts::value<std::string>())(
+      "s,symbol", "Symbol", cxxopts::value<std::string>());
+
+  auto result = options.parse(argc, argv);
+
+  auto input_file_name = result["input_file"].as<std::string>();
+  mlog::info("Parsing OUCH file: {}", input_file_name);
+  CMappedFileReader reader{input_file_name};
 
   if (parser::parse(reader, handler)) {
     mlog::error("error parsing file");

@@ -47,14 +47,15 @@ def run(exe, args=[], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr):
     build_success, build_dir = build(exe)
     print("="*20,file=sys.stderr)
     if build_success:
-        logger.info(f"{build_dir} {exe} {(' '.join(args)).replace('\\', "")}")
+        logger.info(f"{build_dir}/{exe} {(' '.join(args))}")
         res = subprocess.run(
             [f"{build_dir}/{exe}", *args],
             cwd=os.getcwd(),
             text=True,
             stdin=stdin,
             stdout=stdout,
-            stderr=stderr
+            stderr=stderr,
+            shell=True
         )
         if res.returncode == 0:
             logger.info(f"return code: {res.returncode}")
