@@ -102,6 +102,9 @@ export class CMappedFileReader {
   }
 
   CMappedFileReader(const CMappedFileReader &) = delete;
+  CMappedFileReader operator=(const CMappedFileReader &) = delete;
+  CMappedFileReader(CMappedFileReader &&) = delete;
+  CMappedFileReader operator=(CMappedFileReader &&) = delete;
 
   void read(std::byte *buffer, size_t size) {
     auto size_left = static_cast<size_t>(m_file_size - m_offset);
@@ -146,6 +149,9 @@ export class CFileReader {
   }
 
   CFileReader(const CFileReader &) = delete;
+  CFileReader operator=(const CFileReader &) = delete;
+  CFileReader(CFileReader &&) = delete;
+  CFileReader operator=(CFileReader &&) = delete;
 
   void read(std::byte *buffer, size_t size) {
     std::fread(buffer, size, 1, m_file);
