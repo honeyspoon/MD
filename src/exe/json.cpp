@@ -142,17 +142,24 @@ const args_t parse_args(const int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   cxxopts::Options options("json", "to json");
 
-  options.add_options()("i,input_file", "Input file name",
-                        cxxopts::value<std::string>());
+  options.add_options()  //
+      ("i,input_file", "Input file name",
+       cxxopts::value<std::string>()->default_value("-"));
 
   auto result = options.parse(argc, argv);
   auto input_file = result["input_file"].as<std::string>();
 
-  mlog::info("Parsing {}", input_file);
-  CMappedFileReader reader{input_file};
+  std::variant<StreamReader, FileReader> reader = StreamReader{std::cin};
+  if (input_file != "-") {
+    mlog::info("Parsing {}", input_file);
+    reader = FileReader{std::string(input_file)};
+  }
 
-  if (ouch::parser::parse(reader, handler)) {
-    mlog::info("Parsing failed");
+  bool error = std::visit(
+      [](auto &&r) -> bool { return parser::parse(r, handler); }, reader);
+
+  if (error) {
+    mlog::error("error parsing file");
     return 1;
   }
 

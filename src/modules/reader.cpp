@@ -54,6 +54,16 @@ export class FileReader {
             file_name, std::ios::in | std::ios::binary)){};
 
   FileReader(const FileReader &) = delete;
+  FileReader &operator=(const FileReader &) = delete;
+
+  FileReader(FileReader &&other) noexcept : m_file(std::move(other.m_file)) {}
+
+  FileReader &operator=(FileReader &&other) noexcept {
+    if (this != &other) {
+      m_file = std::move(other.m_file);
+    }
+    return *this;
+  }
 
   void read(std::byte *buffer, size_t size) {
     m_file->read(std::bit_cast<char *>(buffer), size);
@@ -102,9 +112,37 @@ export class CMappedFileReader {
   }
 
   CMappedFileReader(const CMappedFileReader &) = delete;
-  CMappedFileReader operator=(const CMappedFileReader &) = delete;
-  CMappedFileReader(CMappedFileReader &&) = delete;
-  CMappedFileReader operator=(CMappedFileReader &&) = delete;
+  CMappedFileReader &operator=(const CMappedFileReader &) = delete;
+
+  CMappedFileReader(CMappedFileReader &&other) noexcept
+      : m_fd(other.m_fd),
+        m_offset(other.m_offset),
+        m_eof(other.m_eof),
+        m_file_size(other.m_file_size),
+        m_file_data(other.m_file_data) {
+    other.m_fd = -1;
+    other.m_offset = 0;
+    other.m_eof = false;
+    other.m_file_size = 0;
+    other.m_file_data = nullptr;
+  }
+
+  CMappedFileReader &operator=(CMappedFileReader &&other) noexcept {
+    if (this != &other) {
+      m_close();
+      m_fd = other.m_fd;
+      m_offset = other.m_offset;
+      m_eof = other.m_eof;
+      m_file_size = other.m_file_size;
+      m_file_data = other.m_file_data;
+      other.m_fd = -1;
+      other.m_offset = 0;
+      other.m_eof = false;
+      other.m_file_size = 0;
+      other.m_file_data = nullptr;
+    }
+    return *this;
+  }
 
   void read(std::byte *buffer, size_t size) {
     auto size_left = static_cast<size_t>(m_file_size - m_offset);
@@ -129,7 +167,7 @@ export class CMappedFileReader {
   }
 
   ~CMappedFileReader() {
-    close(m_fd);
+    m_close();
   }
 
  private:
@@ -138,6 +176,16 @@ export class CMappedFileReader {
   bool m_eof;
   off_t m_file_size;
   uint8_t *m_file_data;
+
+ private:
+  void m_close() {
+    if (m_file_data != nullptr) {
+      munmap(m_file_data, m_file_size);
+    }
+    if (m_fd != -1) {
+      ::close(m_fd);
+    }
+  }
 };
 
 static_assert(Readable<CMappedFileReader>);
@@ -149,9 +197,19 @@ export class CFileReader {
   }
 
   CFileReader(const CFileReader &) = delete;
-  CFileReader operator=(const CFileReader &) = delete;
-  CFileReader(CFileReader &&) = delete;
-  CFileReader operator=(CFileReader &&) = delete;
+  CFileReader &operator=(const CFileReader &) = delete;
+
+  CFileReader(CFileReader &&other) noexcept : m_file(other.m_file) {
+    other.m_file = nullptr;
+  }
+
+  CFileReader &operator=(CFileReader &&other) noexcept {
+    if (this != &other) {
+      m_file = other.m_file;
+      other.m_file = nullptr;
+    }
+    return *this;
+  }
 
   void read(std::byte *buffer, size_t size) {
     std::fread(buffer, size, 1, m_file);

@@ -1,6 +1,7 @@
 #include <cxxopts.hpp>
 
 import std;
+import json;
 import ouch;
 import ouch.parser;
 import mlog;
@@ -26,6 +27,19 @@ void print_stats(const stats_t &stat) {
   std::cout << "- Cancelled " << stat.cancelled << std::endl;
   std::cout << "- Executed messages " << stat.executed << " | shares "
             << stat.executed_shares << std::endl;
+}
+
+void print_stats_json(const stats_t &stat) {
+  auto out = json{
+      {"stream_id", stat.id},
+      {"accepted", stat.accepted},
+      {"system_events", stat.system_events},
+      {"replaced", stat.replaced},
+      {"cancelled", stat.cancelled},
+      {"executed", stat.executed},
+      {"executed_shares", stat.executed_shares},
+  };
+  std::cout << out << std::endl;
 }
 
 using namespace ouch;
@@ -70,23 +84,38 @@ void handler(stream_id_t stream_id, msg_header_t *msg_header) {
 int main(int argc, char *argv[]) {
   cxxopts::Options options("stats", "get stats for a stream");
 
-  options.add_options()("i,input_file", "Input file name",
-                        cxxopts::value<std::string>());
+  options.add_options()  //
+      ("i,input_file", "Input file name",
+       cxxopts::value<std::string>()->default_value("-"))  //
+      ("j,json", "Json output",
+       cxxopts::value<bool>()->default_value("false"))  //
+      ;
 
   auto result = options.parse(argc, argv);
   auto input_file = result["input_file"].as<std::string>();
 
-  mlog::info("Parsing OUCH file: {}", input_file);
-  CMappedFileReader reader{input_file};
+  std::variant<StreamReader, FileReader> reader = StreamReader{std::cin};
+  if (input_file != "-") {
+    mlog::info("Parsing {}", input_file);
+    reader = FileReader{std::string(input_file)};
+  }
 
-  if (parser::parse(reader, handler)) {
+  bool error = std::visit(
+      [](auto &&r) -> bool { return parser::parse(r, handler); }, reader);
+
+  if (error) {
     mlog::error("error parsing file");
     return 1;
   }
 
+  auto json_output = result["json"].as<bool>();
   for (auto &stat : stats) {
     if (stat.accepted > 0) {
-      print_stats(stat);
+      if (json_output) {
+        print_stats_json(stat);
+      } else {
+        print_stats(stat);
+      }
     }
   }
 

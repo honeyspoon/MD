@@ -1,6 +1,6 @@
-BasedOnStyle: Google
+BasedOnStyle: LLVM
 MaxEmptyLinesToKeep: 1
 AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: Empty
 SeparateDefinitionBlocks: Always
-ColumnLimit: 80
+ColumnLimit: 100

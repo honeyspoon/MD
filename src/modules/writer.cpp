@@ -16,13 +16,21 @@ concept Writable = requires(T t, char *buffer, size_t size) {
 };
 
 export class FileWriter {
- public:
+public:
   FileWriter(const std::string &file_name)
-      : m_file(std::make_unique<std::ofstream>(
-            file_name, std::ios::out | std::ios::binary)){};
+      : m_file(std::make_unique<std::ofstream>(file_name, std::ios::out | std::ios::binary)){};
 
   FileWriter(const FileWriter &) = delete;
   FileWriter &operator=(const FileWriter &) = delete;
+
+  FileWriter(FileWriter &&other) noexcept : m_file(std::move(other.m_file)) {}
+
+  FileWriter &operator=(FileWriter &&other) noexcept {
+    if (this != &other) {
+      m_file = std::move(other.m_file);
+    }
+    return *this;
+  }
 
   void write(const char *buffer, const size_t size) {
     m_file->write(buffer, size);
@@ -33,32 +41,31 @@ export class FileWriter {
   }
 
   ~FileWriter() {
-    m_file->flush();
-    m_file->close();
+    if (m_file) {
+      m_file->flush();
+      m_file->close();
+    }
   }
 
- private:
+private:
   std::unique_ptr<std::ofstream> m_file;
 };
 
 static_assert(Writable<FileWriter>);
 
 export class StreamWriter {
- public:
+public:
   StreamWriter(std::ostream &stream) : m_stream(stream) {}
 
   bool error() {
     return m_stream.fail();
   }
 
-  StreamWriter(const StreamWriter &) = delete;
-  StreamWriter &operator=(const StreamWriter &) = delete;
-
   void write(const char *buffer, const size_t size) {
     m_stream.write(buffer, size);
   }
 
- private:
+private:
   std::ostream &m_stream;
 };
 

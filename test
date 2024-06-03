@@ -1,53 +1,20 @@
 #!python
 #set filetype=python
 
+import unittest
 import argparse
-import python_src.log as logger
-import os
-import subprocess
-
-BUILD_DIR = 'out'
-
-test_pipelines = [
-    [[f'{BUILD_DIR}/stats', ['-i','OUCHLMM.incoming.packets']],],
-    [[f'{BUILD_DIR}/json', ['-i','OUCHLMM2.incoming.packets']], ['head', ['-n', '15']], ['jq', []]],
-    [[f'{BUILD_DIR}/stream_split', ['-i', 'OUCHLMM2.incoming.packets']],],
-    [[f'{BUILD_DIR}/list_symbols', ['-i', 'OUCHLMM2.incoming.packets']],],
-    [[f'{BUILD_DIR}/symbol_filter', ['-i', 'OUCHLMM2.incoming.packets','-o', 'a.bin', '-s','SMDV']],],
-]
-
-def run_pipeline(pipeline):
-    processes = []
-    pipes = [os.pipe() for _ in range(len(pipeline) - 1)]
-
-    for i, (target, args) in enumerate(pipeline):
-        cmd = [target, *args]
-
-        write_fd = pipes[i][1] if i < len(pipeline) - 1 else None
-        read_fd = pipes[i - 1][0] if i > 0 else None
-
-        proc = subprocess.Popen(
-            cmd,
-            stdout=write_fd,
-            stdin=read_fd
-        )
-        processes.append(proc)
-
-        if write_fd is not None:
-            os.close(write_fd)
-
-        if read_fd is not None:
-            os.close(read_fd)
-
-    rets = []
-    for proc in processes:
-        proc.wait()
-        rets.append(proc.returncode)
-
-    logger.info(f"return codes {rets}")
-        
+from python_src.build_utils import build
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    for pipeline in test_pipelines:
-        run_pipeline(pipeline)
+
+    build('all')
+
+    test_loader = unittest.TestLoader()
+    test_suite = test_loader.discover('integration_tests', pattern='*.py')
+
+    test_runner = unittest.TextTestRunner(verbosity=2)
+    result = test_runner.run(test_suite)
+
+
+
