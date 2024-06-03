@@ -1,8 +1,8 @@
-#include <cxxopts.hpp>
-
 import std;
 
 import mlog;
+import args;
+
 import ouch;
 import ouch.parser;
 
@@ -37,6 +37,10 @@ int main(int argc, char *argv[]) {
 
   std::variant<StreamReader, FileReader> reader = StreamReader{std::cin};
   if (input_file != "-") {
+    if (!std::filesystem::exists(input_file)) {
+      mlog::error("File {} does not exist", input_file);
+      std::exit(1);
+    }
     mlog::info("Parsing {}", input_file);
     reader = FileReader{std::string(input_file)};
   }

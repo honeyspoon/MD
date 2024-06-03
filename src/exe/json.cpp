@@ -1,6 +1,5 @@
-#include <cxxopts.hpp>
-
 import json;
+import args;
 
 import std;
 import mlog;
@@ -84,41 +83,39 @@ json to_json(canceled_message_t &m) {
 
 void handler(const stream_id_t, ouch::msg_header_t *msg_header) {
   switch (msg_header->msg_type) {
-    case msg_type_t::SYSTEM_EVENT: {
-      auto *system_event =
-          std::bit_cast<ouch::system_event_message_t *>(msg_header);
-      hn_swap(*system_event);
-      std::cout << to_json(*system_event).dump() << std::endl;
-      break;
-    }
-    case msg_type_t::ACCEPTED: {
-      auto *accepted = std::bit_cast<ouch::accepted_message_t *>(msg_header);
-      hn_swap(*accepted);
-      std::cout << to_json(*accepted).dump() << std::endl;
-      break;
-    }
-    case msg_type_t::EXECUTED: {
-      auto *executed = std::bit_cast<ouch::executed_message_t *>(msg_header);
-      hn_swap(*executed);
-      std::cout << to_json(*executed).dump() << std::endl;
-      break;
-    }
-    case msg_type_t::REPLACED: {
-      auto *replaced = std::bit_cast<ouch::replaced_message_t *>(msg_header);
-      hn_swap(*replaced);
-      std::cout << to_json(*replaced).dump() << std::endl;
-      break;
-    }
-    case msg_type_t::CANCELED: {
-      auto *cancelled = std::bit_cast<ouch::canceled_message_t *>(msg_header);
-      hn_swap(*cancelled);
-      std::cout << to_json(*cancelled).dump() << std::endl;
-      break;
-    }
-    default:
-      mlog::warn("Unknown message type {}",
-                 static_cast<char>(msg_header->msg_type));
-      break;
+  case msg_type_t::SYSTEM_EVENT: {
+    auto *system_event = std::bit_cast<ouch::system_event_message_t *>(msg_header);
+    hn_swap(*system_event);
+    std::cout << to_json(*system_event).dump() << std::endl;
+    break;
+  }
+  case msg_type_t::ACCEPTED: {
+    auto *accepted = std::bit_cast<ouch::accepted_message_t *>(msg_header);
+    hn_swap(*accepted);
+    std::cout << to_json(*accepted).dump() << std::endl;
+    break;
+  }
+  case msg_type_t::EXECUTED: {
+    auto *executed = std::bit_cast<ouch::executed_message_t *>(msg_header);
+    hn_swap(*executed);
+    std::cout << to_json(*executed).dump() << std::endl;
+    break;
+  }
+  case msg_type_t::REPLACED: {
+    auto *replaced = std::bit_cast<ouch::replaced_message_t *>(msg_header);
+    hn_swap(*replaced);
+    std::cout << to_json(*replaced).dump() << std::endl;
+    break;
+  }
+  case msg_type_t::CANCELED: {
+    auto *cancelled = std::bit_cast<ouch::canceled_message_t *>(msg_header);
+    hn_swap(*cancelled);
+    std::cout << to_json(*cancelled).dump() << std::endl;
+    break;
+  }
+  default:
+    mlog::warn("Unknown message type {}", static_cast<char>(msg_header->msg_type));
+    break;
   }
 }
 
@@ -142,21 +139,23 @@ const args_t parse_args(const int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   cxxopts::Options options("json", "to json");
 
-  options.add_options()  //
-      ("i,input_file", "Input file name",
-       cxxopts::value<std::string>()->default_value("-"));
+  options.add_options() //
+      ("i,input_file", "Input file name", cxxopts::value<std::string>()->default_value("-"));
 
   auto result = options.parse(argc, argv);
   auto input_file = result["input_file"].as<std::string>();
 
   std::variant<StreamReader, FileReader> reader = StreamReader{std::cin};
   if (input_file != "-") {
+    if (!std::filesystem::exists(input_file)) {
+      mlog::error("File {} does not exist", input_file);
+      std::exit(1);
+    }
     mlog::info("Parsing {}", input_file);
     reader = FileReader{std::string(input_file)};
   }
 
-  bool error = std::visit(
-      [](auto &&r) -> bool { return parser::parse(r, handler); }, reader);
+  bool error = std::visit([](auto &&r) -> bool { return parser::parse(r, handler); }, reader);
 
   if (error) {
     mlog::error("error parsing file");
